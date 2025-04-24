@@ -60,26 +60,26 @@ struct Streak: Codable, Equatable, Identifiable {
     }
 }
 
-
-struct Mood: Codable, Equatable, Identifiable {
+struct UserDailyMoodRecord: Codable, Equatable, Identifiable {
     let id: UUID
     let userId: UUID
-    let moodEmoji: String
-    let moodCategory: MoodCategory
     let date: Date
-    let isFeedbackSubmitted: Bool
+    let moodEmoji: String?
+    let moodCategory: MoodCategory?
+    let isFeedbackSubmitted: Bool?
     let createdAt: Date
 
     enum CodingKeys: String, CodingKey {
-        case id = "mood_id"
+        case id = "daily_record_id"
         case userId = "user_id"
+        case date
         case moodEmoji = "mood_emoji"
         case moodCategory = "mood_category"
-        case date
         case isFeedbackSubmitted = "is_feedback_submitted"
         case createdAt = "created_at"
     }
 }
+
 
 enum MoodCategory: String, CaseIterable,Codable{
     case veryPleasant = "Very Pleasant"
@@ -326,32 +326,37 @@ struct PurchasedSong: Codable, Equatable, Identifiable {
     }
 }
 
+//struct CompletedSession: Codable, Equatable, Identifiable {
+//    let id: UUID
+//    let userId: UUID
+//    let songId: UUID?
+//    let therapyId: UUID?
+//    let completedAt: Date
+//
+//    enum CodingKeys: String, CodingKey {
+//        case id = "session_id"
+//        case userId = "user_id"
+//        case songId = "song_id"
+//        case therapyId = "therapy_id"
+//        case completedAt = "completed_at"
+//    }
+//}
+
 struct CompletedSession: Codable, Equatable, Identifiable {
     let id: UUID
     let userId: UUID
-    let songId: UUID?
-    let therapyId: UUID?
+    let songIds: [UUID]?
+    let therapyIds: [UUID]?
+    let progress: Float
     let completedAt: Date
 
     enum CodingKeys: String, CodingKey {
         case id = "session_id"
         case userId = "user_id"
-        case songId = "song_id"
-        case therapyId = "therapy_id"
+        case songIds = "song_ids"
+        case therapyIds = "therapy_ids"
+        case progress
         case completedAt = "completed_at"
     }
 }
 
-struct FilledDay: Codable, Equatable, Identifiable {
-    let id: UUID
-    let userId: UUID
-    let date: Date
-    let createdAt: Date
-
-    enum CodingKeys: String, CodingKey {
-        case id = "filled_day_id"
-        case userId = "user_id"
-        case date
-        case createdAt = "created_at"
-    }
-}
