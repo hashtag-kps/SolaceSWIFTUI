@@ -210,7 +210,7 @@ struct ContentView: View {
                 }
                 .tag(1)
             
-            Text("Peace Points")
+            PeacePointView()
                 .tabItem {
                     VStack {
                         Image(systemName: "square.grid.3x3.fill")
