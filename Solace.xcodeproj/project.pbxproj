@@ -10,9 +10,22 @@
 		5BA160702DB8EBE200492248 /* Solace.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Solace.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		6F5FEB472DBF9CFF0021B992 /* Exceptions for "Solace" folder in "Solace" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Assets.xcassets,
+			);
+			target = 5BA1606F2DB8EBE200492248 /* Solace */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		5BA160722DB8EBE200492248 /* Solace */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				6F5FEB472DBF9CFF0021B992 /* Exceptions for "Solace" folder in "Solace" target */,
+			);
 			path = Solace;
 			sourceTree = "<group>";
 		};
