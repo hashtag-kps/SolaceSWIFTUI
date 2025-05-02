@@ -9,19 +9,17 @@ import SwiftUI
 import AVKit
 
 struct PeacePointView: View {
-    // Sample data for the view
-    @State private var therapies: [PeacePointTherapy] = []
-    @State private var selectedCategory: String = "All"
-    @State private var searchText: String = ""
+    @StateObject private var viewModel = PeacePointViewModel()
     @State private var selectedTherapy: PeacePointTherapy? = nil
     @State private var showingVideoPlayer = false
+    @State private var showingSearchView = false
     
     private let categories = ["All", "Meditation", "Breathing", "Yoga", "Relaxation"]
     
     var body: some View {
         NavigationStack {
-            VStack(spacing: 0) {
-                // Search bar
+            VStack(spacing: 16) { // Increased spacing for better feel
+                // Search bar (tappable to open search view)
                 searchBar
                 
                 // Category filter
@@ -35,10 +33,16 @@ struct PeacePointView: View {
                     // All therapies grid
                     therapiesGrid
                 }
-                .background(Color(.systemGroupedBackground))
+                .scrollContentBackground(.hidden)
+                .background(
+                    LinearGradient(
+                        gradient: Gradient(colors: [Color(.systemGroupedBackground), Color(.systemBackground)]),
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
             }
-            .navigationTitle("Peace Point")
-            .navigationBarTitleDisplayMode(.large)
+            .padding(.top, 8)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button(action: {
@@ -54,8 +58,9 @@ struct PeacePointView: View {
                     videoPlayerView(for: therapy)
                 }
             }
-            .onAppear {
-                loadSampleData()
+            .sheet(isPresented: $showingSearchView) {
+                SearchView(searchText: $viewModel.searchText, therapies: viewModel.therapies)
+                    .transition(.opacity)
             }
         }
     }
@@ -63,27 +68,29 @@ struct PeacePointView: View {
     // MARK: - Components
     
     private var searchBar: some View {
-        HStack {
-            Image(systemName: "magnifyingglass")
-                .foregroundColor(.gray)
-            
-            TextField("Search therapies", text: $searchText)
-                .foregroundColor(.primary)
-            
-            if !searchText.isEmpty {
-                Button(action: {
-                    searchText = ""
-                }) {
+        Button(action: {
+            showingSearchView = true
+        }) {
+            HStack {
+                Image(systemName: "magnifyingglass")
+                    .foregroundColor(.gray)
+                
+                Text(viewModel.searchText.isEmpty ? "Search therapies" : viewModel.searchText)
+                    .foregroundColor(.primary)
+                
+                Spacer()
+                
+                if !viewModel.searchText.isEmpty {
                     Image(systemName: "xmark.circle.fill")
                         .foregroundColor(.gray)
                 }
             }
+            .padding(.horizontal)
+            .padding(.vertical, 12)
+            .background(Color(.systemBackground))
+            .clipShape(RoundedRectangle(cornerRadius: 16))
         }
         .padding(.horizontal)
-        .padding(.vertical, 10)
-        .background(Color(.systemBackground))
-        .cornerRadius(10)
-        .padding()
     }
     
     private var categoryPicker: some View {
@@ -91,19 +98,19 @@ struct PeacePointView: View {
             HStack(spacing: 15) {
                 ForEach(categories, id: \.self) { category in
                     Button(action: {
-                        selectedCategory = category
+                        viewModel.selectedCategory = category
                     }) {
                         Text(category)
                             .padding(.horizontal, 16)
                             .padding(.vertical, 8)
-                            .background(selectedCategory == category ? Color.blue : Color.gray.opacity(0.2))
-                            .foregroundColor(selectedCategory == category ? .white : .primary)
+                            .background(viewModel.selectedCategory == category ? Color.blue : Color.gray.opacity(0.2))
+                            .foregroundColor(viewModel.selectedCategory == category ? .white : .primary)
                             .cornerRadius(20)
                     }
                 }
             }
             .padding(.horizontal)
-            .padding(.bottom, 10)
+            .padding(.vertical, 8)
         }
     }
     
@@ -113,22 +120,23 @@ struct PeacePointView: View {
                 .font(.title2)
                 .fontWeight(.bold)
                 .padding(.horizontal)
-                .padding(.top)
+                .padding(.top, 8)
             
-            if let featured = therapies.first {
+            if let featured = viewModel.getFeaturedTherapy() {
                 ZStack(alignment: .bottom) {
                     // Image with gradient overlay
                     Image(featured.imageName)
                         .resizable()
                         .aspectRatio(contentMode: .fill)
                         .frame(height: 200)
-                        .cornerRadius(12)
+                        .cornerRadius(16) // Increased corner radius
                         .overlay(
                             LinearGradient(
                                 gradient: Gradient(colors: [Color.clear, Color.black.opacity(0.7)]),
                                 startPoint: .top,
                                 endPoint: .bottom
                             )
+                            .cornerRadius(16)
                         )
                     
                     // Play button overlay
@@ -174,13 +182,13 @@ struct PeacePointView: View {
                 .font(.title2)
                 .fontWeight(.bold)
                 .padding(.horizontal)
-                .padding(.top)
+                .padding(.top, 8)
             
             LazyVGrid(columns: [
                 GridItem(.flexible(), spacing: 16),
                 GridItem(.flexible(), spacing: 16)
             ], spacing: 16) {
-                ForEach(filteredTherapies) { therapy in
+                ForEach(viewModel.getFilteredTherapies()) { therapy in
                     therapyCard(therapy: therapy)
                 }
             }
@@ -194,13 +202,13 @@ struct PeacePointView: View {
             selectedTherapy = therapy
             showingVideoPlayer = true
         }) {
-            VStack(alignment: .leading) {
+            VStack(alignment: .leading, spacing: 0) {
                 ZStack(alignment: .center) {
                     Image(therapy.imageName)
                         .resizable()
                         .aspectRatio(contentMode: .fill)
                         .frame(height: 120)
-                        .cornerRadius(10)
+                        .cornerRadius(16)
                         .clipped()
                     
                     Image(systemName: "play.circle.fill")
@@ -209,15 +217,19 @@ struct PeacePointView: View {
                         .shadow(radius: 2)
                 }
                 
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: 6) {
                     Text(therapy.title)
                         .font(.headline)
-                        .lineLimit(1)
+                        .fontWeight(.bold)
+                        .foregroundColor(.primary)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.8)
+                        .fixedSize(horizontal: false, vertical: true)
                     
                     Text(therapy.subtitle)
                         .font(.subheadline)
                         .foregroundColor(.secondary)
-                        .lineLimit(2)
+                        .lineLimit(3)
                     
                     Text(therapy.category)
                         .font(.caption)
@@ -225,9 +237,12 @@ struct PeacePointView: View {
                         .padding(.top, 2)
                 }
                 .padding(.vertical, 8)
+                .padding(.horizontal, 4)
+                .frame(minHeight: 120)
             }
+            .frame(maxWidth: .infinity, maxHeight: 250)
             .background(Color(.systemBackground))
-            .cornerRadius(12)
+            .cornerRadius(16)
             .shadow(color: .gray.opacity(0.2), radius: 5, x: 0, y: 2)
         }
         .buttonStyle(PlainButtonStyle())
@@ -240,10 +255,10 @@ struct PeacePointView: View {
                 .fontWeight(.bold)
                 .padding()
             
-            // Using AVPlayer for video playback
             if let url = Bundle.main.url(forResource: therapy.videoName, withExtension: "mp4") {
                 VideoPlayer(player: AVPlayer(url: url))
                     .frame(height: 250)
+                    .cornerRadius(16)
             } else {
                 Text("Video not found")
                     .foregroundColor(.red)
@@ -274,8 +289,7 @@ struct PeacePointView: View {
             }
             
             Button(action: {
-                // Save as completed session
-                saveCompletedSession(therapy: therapy)
+                viewModel.markTherapyAsCompleted(therapy: therapy)
             }) {
                 Text("Mark as Completed")
                     .font(.headline)
@@ -283,116 +297,122 @@ struct PeacePointView: View {
                     .frame(height: 50)
                     .frame(maxWidth: .infinity)
                     .background(Color.blue)
-                    .cornerRadius(10)
+                    .cornerRadius(16)
             }
             .padding()
         }
     }
+}
+
+// MARK: - Search View
+struct SearchView: View {
+    @Binding var searchText: String
+    let therapies: [PeacePointTherapy]
+    @Environment(\.dismiss) private var dismiss
     
-    // MARK: - Helper Methods
-    
-    // Filter therapies based on selected category and search text
-    private var filteredTherapies: [PeacePointTherapy] {
-        var result = therapies
-        
-        if selectedCategory != "All" {
-            result = result.filter { $0.category == selectedCategory }
-        }
-        
-        if !searchText.isEmpty {
-            result = result.filter {
-                $0.title.localizedCaseInsensitiveContains(searchText) ||
-                $0.subtitle.localizedCaseInsensitiveContains(searchText) ||
-                $0.description.localizedCaseInsensitiveContains(searchText)
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 16) {
+                // Search input
+                HStack {
+                    Image(systemName: "magnifyingglass")
+                        .foregroundColor(.gray)
+                    
+                    TextField("Search therapies", text: $searchText)
+                        .foregroundColor(.primary)
+                        .autocapitalization(.none)
+                    
+                    if !searchText.isEmpty {
+                        Button(action: {
+                            searchText = ""
+                        }) {
+                            Image(systemName: "xmark.circle.fill")
+                                .foregroundColor(.gray)
+                        }
+                    }
+                }
+                .padding(.horizontal)
+                .padding(.vertical, 12)
+                .background(Color(.systemBackground))
+                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .padding(.horizontal)
+                
+                // Suggestions
+                if suggestions.isEmpty && !searchText.isEmpty {
+                    Text("No results found")
+                        .foregroundColor(.secondary)
+                        .font(.body)
+                        .padding()
+                } else {
+                    ScrollView {
+                        LazyVGrid(columns: [
+                            GridItem(.flexible(), spacing: 16),
+                            GridItem(.flexible(), spacing: 16)
+                        ], spacing: 16) {
+                            ForEach(suggestions, id: \.self) { suggestion in
+                                suggestionCard(suggestion: suggestion)
+                            }
+                        }
+                        .padding(.horizontal)
+                        .padding(.bottom)
+                    }
+                    .scrollContentBackground(.hidden)
+                    .animation(.easeInOut, value: searchText)
+                }
+                
+                Spacer()
+            }
+            .background(Color(.systemGroupedBackground))
+            .navigationTitle("Search")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Cancel") {
+                        dismiss()
+                    }
+                }
             }
         }
-        
-        return result
     }
     
-    // Load sample data
-    private func loadSampleData() {
-        // Create sample PeacePointTherapy objects
-        let dateFormatter = ISO8601DateFormatter()
-        
-        therapies = [
-            PeacePointTherapy(
-                id: UUID(),
-                imageName: "meditation_1",
-                title: "Morning Mindfulness",
-                subtitle: "Start your day with 10 minutes of calm",
-                videoName: "morning_meditation",
-                description: "This meditation helps you begin your day with a clear mind and positive intention. Perfect for beginners, this guided session will help you establish a daily mindfulness practice.",
-                category: "Meditation",
-                createdAt: dateFormatter.date(from: "2025-01-01T00:00:00Z") ?? Date()
-            ),
-            PeacePointTherapy(
-                id: UUID(),
-                imageName: "breathing_1",
-                title: "Deep Breathing Exercise",
-                subtitle: "Reduce stress with 4-7-8 breathing",
-                videoName: "breathing_technique",
-                description: "This breathing technique can help reduce anxiety, help you fall asleep, and re-center yourself during stressful moments. Practice this exercise anywhere, anytime you need to find calm.",
-                category: "Breathing",
-                createdAt: dateFormatter.date(from: "2025-01-02T00:00:00Z") ?? Date()
-            ),
-            PeacePointTherapy(
-                id: UUID(),
-                imageName: "yoga_1",
-                title: "Gentle Yoga Flow",
-                subtitle: "15-minute rejuvenating flow for all levels",
-                videoName: "gentle_yoga",
-                description: "This gentle yoga sequence is perfect for beginners or when you need a restorative practice. Focus on breath and gentle movement to release tension in your body and mind.",
-                category: "Yoga",
-                createdAt: dateFormatter.date(from: "2025-01-03T00:00:00Z") ?? Date()
-            ),
-            PeacePointTherapy(
-                id: UUID(),
-                imageName: "relaxation_1",
-                title: "Body Scan Relaxation",
-                subtitle: "Release tension with progressive relaxation",
-                videoName: "body_scan",
-                description: "This progressive relaxation technique helps you identify and release tension throughout your body. Perfect for before sleep or anytime you need to deeply relax.",
-                category: "Relaxation",
-                createdAt: dateFormatter.date(from: "2025-01-04T00:00:00Z") ?? Date()
-            ),
-            PeacePointTherapy(
-                id: UUID(),
-                imageName: "meditation_2",
-                title: "Gratitude Meditation",
-                subtitle: "Cultivate appreciation and positivity",
-                videoName: "gratitude_practice",
-                description: "This guided meditation helps you focus on gratitude and appreciation, which can improve your mood and outlook. Regular practice can help reduce negative thinking patterns.",
-                category: "Meditation",
-                createdAt: dateFormatter.date(from: "2025-01-05T00:00:00Z") ?? Date()
-            ),
-            PeacePointTherapy(
-                id: UUID(),
-                imageName: "yoga_2",
-                title: "Desk Yoga Break",
-                subtitle: "5-minute stretch for work breaks",
-                videoName: "desk_yoga",
-                description: "Take a quick break from work with these simple stretches you can do right at your desk. Relieve tension in your neck, shoulders, and back from sitting too long.",
-                category: "Yoga",
-                createdAt: dateFormatter.date(from: "2025-01-06T00:00:00Z") ?? Date()
-            )
-        ]
+    private func suggestionCard(suggestion: String) -> some View {
+        Button(action: {
+            searchText = suggestion
+        }) {
+            VStack(alignment: .leading, spacing: 0) {
+                ZStack(alignment: .center) {
+                    Color.gray.opacity(0.2)
+                        .frame(height: 120)
+                        .cornerRadius(16)
+                    
+                    Image(systemName: "play.circle.fill")
+                        .font(.system(size: 40))
+                        .foregroundColor(.white)
+                        .shadow(radius: 2)
+                }
+                
+                Text(suggestion)
+                    .font(.headline)
+                    .fontWeight(.bold)
+                    .foregroundColor(.primary)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.8)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.vertical, 8)
+                    .padding(.horizontal, 4)
+            }
+            .frame(maxWidth: .infinity, maxHeight: 180)
+            .background(Color(.systemBackground))
+            .cornerRadius(16)
+            .shadow(color: .gray.opacity(0.2), radius: 5, x: 0, y: 2)
+        }
+        .buttonStyle(PlainButtonStyle())
     }
     
-    // Save completed session
-    private func saveCompletedSession(therapy: PeacePointTherapy) {
-        // In a real app, you would save to Core Data or other persistence
-        let completedSession = CompletedSession(
-            id: UUID(),
-            userId: UUID(), // In real app, use actual user ID
-            songIds: nil,
-            therapyIds: [therapy.id],
-            progress: 1.0, // Completed
-            completedAt: Date()
-        )
-        
-        print("Session completed: \(completedSession)")
-        // Implement actual saving logic here
+    private var suggestions: [String] {
+        let allSuggestions = therapies.map { $0.title } + therapies.map { $0.category }
+        let uniqueSuggestions = Array(Set(allSuggestions)).sorted()
+        return searchText.isEmpty ? uniqueSuggestions.prefix(4).map { $0 } : uniqueSuggestions.filter { $0.localizedCaseInsensitiveContains(searchText) }.prefix(4).map { $0 }
     }
 }
 
