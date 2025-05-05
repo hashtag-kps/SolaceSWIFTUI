@@ -139,7 +139,7 @@ struct PeacePointView: View {
                 .padding(.top, 8)
             
             if let featured = viewModel.getFeaturedTherapy() {
-                ZStack(alignment: .bottom) {
+                ZStack {
                     Image(featured.imageName)
                         .resizable()
                         .aspectRatio(contentMode: .fill)
@@ -154,6 +154,7 @@ struct PeacePointView: View {
                             .cornerRadius(16)
                         )
                     
+                    // Centered play button
                     Button(action: {
                         selectedTherapy = featured
                         showingVideoPlayer = true
@@ -168,21 +169,25 @@ struct PeacePointView: View {
                                 .foregroundColor(.blue)
                         }
                     }
-                    .offset(y: -30)
                     
-                    VStack(alignment: .leading) {
-                        Text(featured.title)
-                            .font(.title3)
-                            .fontWeight(.bold)
-                            .foregroundColor(.white)
+                    // Text overlay at the bottom
+                    VStack {
+                        Spacer()
                         
-                        Text(featured.subtitle)
-                            .font(.subheadline)
-                            .foregroundColor(.white.opacity(0.8))
-                            .lineLimit(2)
+                        VStack(alignment: .leading) {
+                            Text(featured.title)
+                                .font(.title3)
+                                .fontWeight(.bold)
+                                .foregroundColor(.white)
+                            
+                            Text(featured.subtitle)
+                                .font(.subheadline)
+                                .foregroundColor(.white.opacity(0.8))
+                                .lineLimit(2)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding()
                     }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding()
                 }
                 .padding(.horizontal)
             }
@@ -230,30 +235,29 @@ struct PeacePointView: View {
                         .shadow(radius: 2)
                 }
                 
-                VStack(alignment: .leading, spacing: 6) {
+                VStack(alignment: .leading, spacing: 4) {
                     Text(therapy.title)
-                        .font(.subheadline) // Reduced from .headline
+                        .font(.caption)
                         .fontWeight(.bold)
                         .foregroundColor(.primary)
-                        .lineLimit(2)
-                        .minimumScaleFactor(0.8)
-                        .fixedSize(horizontal: false, vertical: true)
+                        .lineLimit(1)
                     
                     Text(therapy.subtitle)
-                        .font(.caption) // Reduced from .subheadline
+                        .font(.caption2)
                         .foregroundColor(.secondary)
-                        .lineLimit(3)
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
                     
                     Text(therapy.category)
-                        .font(.caption2) // Reduced from .caption
+                        .font(.caption2)
                         .foregroundColor(.blue)
                         .padding(.top, 2)
                 }
                 .padding(.vertical, 8)
-                .padding(.horizontal, 4)
-                .frame(minHeight: 100) // Adjusted height due to smaller text
+                .padding(.horizontal, 6)
+                .frame(height: 70) // Fixed height for consistency
             }
-            .frame(maxWidth: .infinity, maxHeight: 230) // Adjusted overall card height
+            .frame(maxWidth: .infinity, maxHeight: 190) // Fixed overall card height
             .background(Color(.systemBackground))
             .cornerRadius(16)
             .shadow(color: .gray.opacity(0.2), radius: 5, x: 0, y: 2)
@@ -395,7 +399,7 @@ struct SearchView: View {
             VStack(alignment: .leading, spacing: 0) {
                 ZStack(alignment: .center) {
                     Color.gray.opacity(0.2)
-                        .frame(height: 120)
+                        .frame(height: 100) // Standardized height
                         .cornerRadius(16)
                     
                     Image(systemName: "play.circle.fill")
@@ -405,16 +409,15 @@ struct SearchView: View {
                 }
                 
                 Text(suggestion)
-                    .font(.headline)
+                    .font(.caption)
                     .fontWeight(.bold)
                     .foregroundColor(.primary)
                     .lineLimit(2)
-                    .minimumScaleFactor(0.8)
-                    .fixedSize(horizontal: false, vertical: true)
                     .padding(.vertical, 8)
-                    .padding(.horizontal, 4)
+                    .padding(.horizontal, 6)
+                    .frame(height: 40) // Fixed height for text area
             }
-            .frame(maxWidth: .infinity, maxHeight: 180)
+            .frame(maxWidth: .infinity, maxHeight: 140) // Fixed overall card height
             .background(Color(.systemBackground))
             .cornerRadius(16)
             .shadow(color: .gray.opacity(0.2), radius: 5, x: 0, y: 2)
