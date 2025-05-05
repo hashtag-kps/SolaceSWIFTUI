@@ -15,7 +15,7 @@ struct ContentView: View {
                     Text("Soulful Escapes")
                 }
             
-            ProfileView()
+            PeacePointView()
                 .tabItem {
                     Image(systemName: "aqi.medium")
                     Text("Peace Points")
