@@ -141,6 +141,7 @@ struct FavoriteSong: Codable, Equatable, Identifiable {
     }
 }
 
+
 struct PeacePointTherapy: Codable, Equatable, Identifiable {
     let id: UUID
     let imageName: String
@@ -148,7 +149,7 @@ struct PeacePointTherapy: Codable, Equatable, Identifiable {
     let subtitle: String
     let videoName: String
     let description: String
-    let category: MoodCategory
+    let category: String
     let createdAt: Date
 
     enum CodingKeys: String, CodingKey {
