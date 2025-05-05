@@ -5,14 +5,12 @@
 //  Created by Batch -1 on 05/05/25.
 //
 
-
 import SwiftUI
 import AVKit
 
 struct PeacePointView: View {
     @StateObject private var viewModel = PeacePointViewModel()
     @State private var selectedTherapy: PeacePointTherapy? = nil
-    @State private var showingVideoPlayer = false
     @State private var showingSearchView = false
     @State private var isMoodIconHighlighted = false
     
@@ -38,7 +36,7 @@ struct PeacePointView: View {
                     // Search bar (pinned at the top)
                     searchBar
                         .padding(.vertical, 8)
-                        .background(Color.clear) // Make the search bar background clear to show the gradient
+                        .background(Color.clear)
                     
                     // Main scrollable content
                     ScrollView {
@@ -50,11 +48,17 @@ struct PeacePointView: View {
                             // Featured therapy section
                             featuredTherapySection
                             
+                            // Selected therapy video player (if any)
+                            if let therapy = selectedTherapy {
+                                videoPlayerView(for: therapy)
+                                    .padding(.horizontal)
+                            }
+                            
                             // All therapies grid
                             therapiesGrid
                         }
                         .padding(.bottom)
-                        .background(Color.clear) // Ensure ScrollView background is clear
+                        .background(Color.clear)
                     }
                     .scrollContentBackground(.hidden)
                 }
@@ -67,11 +71,6 @@ struct PeacePointView: View {
                         Image(systemName: "face.smiling")
                             .foregroundColor(isMoodIconHighlighted ? AppColors.appleMusicHighlight : .primary)
                     }
-                }
-            }
-            .sheet(isPresented: $showingVideoPlayer) {
-                if let therapy = selectedTherapy {
-                    videoPlayerView(for: therapy)
                 }
             }
             .sheet(isPresented: $showingSearchView) {
@@ -103,7 +102,7 @@ struct PeacePointView: View {
             }
             .padding(.horizontal)
             .padding(.vertical, 12)
-            .background(Color(.systemBackground).opacity(0.8)) // Slightly transparent for contrast
+            .background(Color(.systemBackground).opacity(0.8))
             .clipShape(RoundedRectangle(cornerRadius: 16))
         }
         .padding(.horizontal)
@@ -140,7 +139,7 @@ struct PeacePointView: View {
             
             if let featured = viewModel.getFeaturedTherapy() {
                 ZStack {
-                    Image(featured.imageName)
+                    Image("peaceImage")
                         .resizable()
                         .aspectRatio(contentMode: .fill)
                         .frame(height: 200)
@@ -156,8 +155,7 @@ struct PeacePointView: View {
                     
                     // Centered play button
                     Button(action: {
-                        selectedTherapy = featured
-                        showingVideoPlayer = true
+                        selectedTherapy = selectedTherapy == featured ? nil : featured
                     }) {
                         ZStack {
                             Circle()
@@ -217,12 +215,11 @@ struct PeacePointView: View {
     
     private func therapyCard(therapy: PeacePointTherapy) -> some View {
         Button(action: {
-            selectedTherapy = therapy
-            showingVideoPlayer = true
+            selectedTherapy = selectedTherapy == therapy ? nil : therapy
         }) {
             VStack(alignment: .leading, spacing: 0) {
                 ZStack(alignment: .center) {
-                    Image(therapy.imageName)
+                    Image("peaceImage")
                         .resizable()
                         .aspectRatio(contentMode: .fill)
                         .frame(height: 120)
@@ -255,9 +252,9 @@ struct PeacePointView: View {
                 }
                 .padding(.vertical, 8)
                 .padding(.horizontal, 6)
-                .frame(height: 70) // Fixed height for consistency
+                .frame(height: 70)
             }
-            .frame(maxWidth: .infinity, maxHeight: 190) // Fixed overall card height
+            .frame(maxWidth: .infinity, maxHeight: 190)
             .background(Color(.systemBackground))
             .cornerRadius(16)
             .shadow(color: .gray.opacity(0.2), radius: 5, x: 0, y: 2)
@@ -272,52 +269,54 @@ struct PeacePointView: View {
                 .fontWeight(.bold)
                 .padding()
             
-            if let url = Bundle.main.url(forResource: therapy.videoName, withExtension: "mp4") {
-                VideoPlayer(player: AVPlayer(url: url))
+            ZStack {
+                VideoPlayer(player: AVPlayer(url: Bundle.main.url(forResource: "Foot massage", withExtension: "mp4")!))
                     .frame(height: 250)
                     .cornerRadius(16)
-            } else {
-                Text("Video not found")
-                    .foregroundColor(.red)
-            }
-            
-            ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
-                    Text(therapy.subtitle)
-                        .font(.title3)
-                        .foregroundColor(.secondary)
-                    
-                    Divider()
-                    
-                    Text("About this therapy")
-                        .font(.headline)
-                    
-                    Text(therapy.description)
-                        .font(.body)
-                        .lineSpacing(5)
-                    
-                    Divider()
-                    
-                    Text("Category: \(therapy.category)")
-                        .font(.subheadline)
-                        .foregroundColor(.blue)
+                
+                Button(action: {
+                    if let url = Bundle.main.url(forResource: therapy.videoName, withExtension: "mp4") {
+                        let player = AVPlayer(url: url)
+                        player.play()
+                    }
+                }) {
+                    ZStack {
+                        Circle()
+                            .fill(Color.white.opacity(0.8))
+                            .frame(width: 80, height: 80)
+                        
+                        Image(systemName: "play.fill")
+                            .font(.largeTitle)
+                            .foregroundColor(.blue)
+                    }
                 }
-                .padding()
             }
             
-            Button(action: {
-                viewModel.markTherapyAsCompleted(therapy: therapy)
-            }) {
-                Text("Mark as Completed")
+            VStack(alignment: .leading, spacing: 16) {
+                Text(therapy.subtitle)
+                    .font(.title3)
+                    .foregroundColor(.secondary)
+                
+                Divider()
+                
+                Text("About this therapy")
                     .font(.headline)
-                    .foregroundColor(.white)
-                    .frame(height: 50)
-                    .frame(maxWidth: .infinity)
-                    .background(Color.blue)
-                    .cornerRadius(16)
+                
+                Text(therapy.description)
+                    .font(.body)
+                    .lineSpacing(5)
+                
+                Divider()
+                
+                Text("Category: \(therapy.category)")
+                    .font(.subheadline)
+                    .foregroundColor(.blue)
             }
             .padding()
         }
+        .background(Color(.systemBackground))
+        .cornerRadius(16)
+        .padding(.vertical)
     }
 }
 
@@ -399,7 +398,7 @@ struct SearchView: View {
             VStack(alignment: .leading, spacing: 0) {
                 ZStack(alignment: .center) {
                     Color.gray.opacity(0.2)
-                        .frame(height: 100) // Standardized height
+                        .frame(height: 100)
                         .cornerRadius(16)
                     
                     Image(systemName: "play.circle.fill")
@@ -415,9 +414,9 @@ struct SearchView: View {
                     .lineLimit(2)
                     .padding(.vertical, 8)
                     .padding(.horizontal, 6)
-                    .frame(height: 40) // Fixed height for text area
+                    .frame(height: 40)
             }
-            .frame(maxWidth: .infinity, maxHeight: 140) // Fixed overall card height
+            .frame(maxWidth: .infinity, maxHeight: 140)
             .background(Color(.systemBackground))
             .cornerRadius(16)
             .shadow(color: .gray.opacity(0.2), radius: 5, x: 0, y: 2)
@@ -429,6 +428,23 @@ struct SearchView: View {
         let allSuggestions = therapies.map { $0.title } + therapies.map { $0.category }
         let uniqueSuggestions = Array(Set(allSuggestions)).sorted()
         return searchText.isEmpty ? uniqueSuggestions.prefix(4).map { $0 } : uniqueSuggestions.filter { $0.localizedCaseInsensitiveContains(searchText) }.prefix(4).map { $0 }
+    }
+}
+
+// MARK: - Foot Massage Video Player
+struct FootMassageVideoPlayer: View {
+    @State private var player: AVPlayer
+    
+    init() {
+        if let videoURL = Bundle.main.url(forResource: "Foot massage", withExtension: "mp4") {
+            self._player = State(initialValue: AVPlayer(url: videoURL))
+        } else {
+            self._player = State(initialValue: AVPlayer())
+        }
+    }
+    
+    var body: some View {
+        VideoPlayer(player: player)
     }
 }
 
