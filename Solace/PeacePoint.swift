@@ -1,10 +1,3 @@
-//
-//  PeacePointView.swift
-//  Solace
-//
-//  Created on 02/05/25.
-//
-
 import SwiftUI
 import AVKit
 
@@ -13,43 +6,58 @@ struct PeacePointView: View {
     @State private var selectedTherapy: PeacePointTherapy? = nil
     @State private var showingVideoPlayer = false
     @State private var showingSearchView = false
+    @State private var isMoodIconHighlighted = false
     
     private let categories = ["All", "Meditation", "Breathing", "Yoga", "Relaxation"]
     
+    // Define the gradient background
+    private var backgroundGradient: LinearGradient {
+        LinearGradient(
+            gradient: Gradient(colors: [Color(.systemGroupedBackground), Color(.systemBackground)]),
+            startPoint: .top,
+            endPoint: .bottom
+        )
+    }
+    
     var body: some View {
         NavigationStack {
-            VStack(spacing: 16) { // Increased spacing for better feel
-                // Search bar (tappable to open search view)
-                searchBar
+            ZStack {
+                // Background gradient for the entire view
+                backgroundGradient
+                    .ignoresSafeArea()
                 
-                // Category filter
-                categoryPicker
-                
-                // Main content
-                ScrollView {
-                    // Featured therapy section
-                    featuredTherapySection
+                VStack(spacing: 0) {
+                    // Search bar (pinned at the top)
+                    searchBar
+                        .padding(.vertical, 8)
+                        .background(Color.clear) // Make the search bar background clear to show the gradient
                     
-                    // All therapies grid
-                    therapiesGrid
+                    // Main scrollable content
+                    ScrollView {
+                        VStack(spacing: 16) {
+                            // Category filter (scrolls away)
+                            categoryPicker
+                                .padding(.top, 8)
+                            
+                            // Featured therapy section
+                            featuredTherapySection
+                            
+                            // All therapies grid
+                            therapiesGrid
+                        }
+                        .padding(.bottom)
+                        .background(Color.clear) // Ensure ScrollView background is clear
+                    }
+                    .scrollContentBackground(.hidden)
                 }
-                .scrollContentBackground(.hidden)
-                .background(
-                    LinearGradient(
-                        gradient: Gradient(colors: [Color(.systemGroupedBackground), Color(.systemBackground)]),
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                )
             }
-            .padding(.top, 8)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button(action: {
-                        // Add action for favorites or settings
+                        isMoodIconHighlighted.toggle()
                     }) {
-                        Image(systemName: "heart")
-                            .foregroundColor(.primary)
+                        Image(systemName: "face.smiling")
+                            .foregroundColor(isMoodIconHighlighted ? AppColors.appleMusicHighlight : .primary)
                     }
                 }
             }
@@ -87,7 +95,7 @@ struct PeacePointView: View {
             }
             .padding(.horizontal)
             .padding(.vertical, 12)
-            .background(Color(.systemBackground))
+            .background(Color(.systemBackground).opacity(0.8)) // Slightly transparent for contrast
             .clipShape(RoundedRectangle(cornerRadius: 16))
         }
         .padding(.horizontal)
@@ -124,12 +132,11 @@ struct PeacePointView: View {
             
             if let featured = viewModel.getFeaturedTherapy() {
                 ZStack(alignment: .bottom) {
-                    // Image with gradient overlay
                     Image(featured.imageName)
                         .resizable()
                         .aspectRatio(contentMode: .fill)
                         .frame(height: 200)
-                        .cornerRadius(16) // Increased corner radius
+                        .cornerRadius(16)
                         .overlay(
                             LinearGradient(
                                 gradient: Gradient(colors: [Color.clear, Color.black.opacity(0.7)]),
@@ -139,7 +146,6 @@ struct PeacePointView: View {
                             .cornerRadius(16)
                         )
                     
-                    // Play button overlay
                     Button(action: {
                         selectedTherapy = featured
                         showingVideoPlayer = true
@@ -156,7 +162,6 @@ struct PeacePointView: View {
                     }
                     .offset(y: -30)
                     
-                    // Text overlays at bottom
                     VStack(alignment: .leading) {
                         Text(featured.title)
                             .font(.title3)
@@ -219,7 +224,7 @@ struct PeacePointView: View {
                 
                 VStack(alignment: .leading, spacing: 6) {
                     Text(therapy.title)
-                        .font(.headline)
+                        .font(.subheadline) // Reduced from .headline
                         .fontWeight(.bold)
                         .foregroundColor(.primary)
                         .lineLimit(2)
@@ -227,20 +232,20 @@ struct PeacePointView: View {
                         .fixedSize(horizontal: false, vertical: true)
                     
                     Text(therapy.subtitle)
-                        .font(.subheadline)
+                        .font(.caption) // Reduced from .subheadline
                         .foregroundColor(.secondary)
                         .lineLimit(3)
                     
                     Text(therapy.category)
-                        .font(.caption)
+                        .font(.caption2) // Reduced from .caption
                         .foregroundColor(.blue)
                         .padding(.top, 2)
                 }
                 .padding(.vertical, 8)
                 .padding(.horizontal, 4)
-                .frame(minHeight: 120)
+                .frame(minHeight: 100) // Adjusted height due to smaller text
             }
-            .frame(maxWidth: .infinity, maxHeight: 250)
+            .frame(maxWidth: .infinity, maxHeight: 230) // Adjusted overall card height
             .background(Color(.systemBackground))
             .cornerRadius(16)
             .shadow(color: .gray.opacity(0.2), radius: 5, x: 0, y: 2)
