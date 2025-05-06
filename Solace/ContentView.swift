@@ -3,7 +3,7 @@ import SwiftUI
 struct ContentView: View {
     var body: some View {
         TabView {
-            HomeView()
+            MoodTrackerAppView()
                 .tabItem {
                     Image(systemName: "house.fill")
                     Text("Home")
@@ -24,13 +24,7 @@ struct ContentView: View {
     }
 }
 
-struct HomeView: View {
-    var body: some View {
-        VStack {
-            Text("Home")
-        }
-    }
-}
+
 
 struct ExploreView: View {
     var body: some View {
@@ -40,13 +34,7 @@ struct ExploreView: View {
     }
 }
 
-struct ProfileView: View {
-    var body: some View {
-        VStack {
-            Text("Profile")
-        }
-    }
-}
+
 
 #Preview {
     ContentView()
