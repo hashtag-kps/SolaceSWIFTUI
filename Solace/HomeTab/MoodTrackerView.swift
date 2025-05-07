@@ -4,6 +4,8 @@ struct MoodTrackerAppView: View {
     @State private var showLogMoodSheet = false
     @State private var showFullCalendarView = false
     @State private var currentTime = ""
+    @State private var selectedMood = "Please enter your mood"
+    @State private var selectedMoodImage = "photo" // Default placeholder
     
     var body: some View {
         VStack(spacing: 20) {
@@ -30,41 +32,38 @@ struct MoodTrackerAppView: View {
                     .frame(height: 120)
                 
                 HStack(spacing: 20) {
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 15)
-                            .fill(Color.blue.opacity(0.2))
-                            .frame(width: 80, height: 80)
-                        Image(systemName: "photo")
+                    if currentTime.isEmpty {
+                        Text("Please enter your mood")
+                            .font(.subheadline)
+                            .fontWeight(.semibold)
+                            .foregroundColor(.black)
+                            .lineLimit(1)
+                    } else {
+                        Image(selectedMoodImage)
                             .resizable()
-                            .frame(width: 40, height: 40)
+                            .scaledToFit()
+                            .frame(width: 60, height: 60)
                             .foregroundColor(.blue)
                     }
                     
                     VStack(alignment: .leading) {
                         if !currentTime.isEmpty {
-                            Text("Very Pleasant")
+                            Text(selectedMood)
                                 .font(.headline)
                                 .fontWeight(.semibold)
                                 .foregroundColor(.black)
                                 .lineLimit(1)
                                 .fixedSize(horizontal: true, vertical: false)
+                            Text(currentTime)
+                                .font(.caption2)
+                                .foregroundColor(.black)
+                                .fontWeight(.semibold)
                         }
-                        Text(currentTime.isEmpty ? "Please enter your mood" : currentTime)
-                            .font(.caption2)
-                            .foregroundColor(.black)
-                            .fontWeight(.semibold)
-                            .lineLimit(1)
-                         //   .fixedSize(horizontal: true, vertical: false)
                     }
                     
                     Spacer()
                     
                     Button(action: {
-                        // Update current time when button is pressed (time only)
-                        let formatter = DateFormatter()
-                        formatter.dateFormat = "h:mm a"
-                        currentTime = formatter.string(from: Date())
-                        
                         showLogMoodSheet.toggle()
                     }) {
                         Text("Log Mood")
@@ -83,14 +82,13 @@ struct MoodTrackerAppView: View {
             }
             .padding(.horizontal)
             .sheet(isPresented: $showLogMoodSheet) {
-                VStack {
-                    Text("Log Mood")
-                        .font(.title2)
-                        .fontWeight(.bold)
-                        .foregroundColor(.black)
-                    Spacer()
-                }
-                .padding()
+                LogMoodView(
+                    onSetMood: { mood, image, time in
+                        selectedMood = mood
+                        selectedMoodImage = image
+                        currentTime = time
+                    }
+                )
             }
             
             // Calendar Section
@@ -192,7 +190,8 @@ struct MoodTrackerAppView: View {
                     .foregroundColor(.black)
                 
                 ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 15) {
+                    HStack(spacing: 20) {
+                        // First card
                         VStack(alignment: .leading) {
                             Image(systemName: "sun.max.fill")
                                 .resizable()
@@ -206,10 +205,11 @@ struct MoodTrackerAppView: View {
                                 .font(.caption)
                                 .foregroundColor(.gray)
                         }
-                        .frame(width: 150, height: 200)
+                        .frame(width: UIScreen.main.bounds.width * 0.43, height: 200)
                         .background(Color.orange.opacity(0.1))
                         .clipShape(RoundedRectangle(cornerRadius: 15))
                         
+                        // Second card
                         VStack(alignment: .leading) {
                             Image(systemName: "moon.fill")
                                 .resizable()
@@ -223,10 +223,11 @@ struct MoodTrackerAppView: View {
                                 .font(.caption)
                                 .foregroundColor(.gray)
                         }
-                        .frame(width: 150, height: 200)
+                        .frame(width: UIScreen.main.bounds.width * 0.43, height: 200)
                         .background(Color.purple.opacity(0.1))
                         .clipShape(RoundedRectangle(cornerRadius: 15))
                     }
+                    .padding(.horizontal, 0)
                 }
             }
             .padding(.horizontal)
@@ -239,6 +240,78 @@ struct MoodTrackerAppView: View {
         .sheet(isPresented: $showFullCalendarView) {
             FullCalendarView()
         }
+    }
+}
+
+// Updated Log Mood View with Centered Image
+struct LogMoodView: View {
+    @Environment(\.dismiss) var dismiss
+    @State private var sliderValue: Double = 2 // Start at neutral (0 to 4)
+    let onSetMood: (String, String, String) -> Void
+    
+    private let moodLabels = ["Very Unpleasant", "Unpleasant", "Neutral", "Pleasant", "Very Pleasant"]
+    private let moodImages = ["very unpleasant", "unpleasant", "neutral", "pleasant", "very pleasant"]
+    
+    var body: some View {
+        VStack(spacing: 20) {
+            // Header
+            Text("Log Your Mood")
+                .font(.title2)
+                .fontWeight(.bold)
+                .foregroundColor(.black)
+            
+            Spacer() // Push content to center the image vertically
+            
+            // Mood Image (Centered in the middle of the screen)
+            Image(moodImages[Int(sliderValue)])
+                .resizable()
+                .scaledToFit()
+                .frame(width: 120, height: 120)
+                .foregroundColor(.gray)
+            
+            // Current Mood Label
+            Text(moodLabels[Int(sliderValue)])
+                .font(.headline)
+                .fontWeight(.semibold)
+                .foregroundColor(.black)
+            
+            // Slider
+            Slider(value: $sliderValue, in: 0...4, step: 1)
+                .accentColor(.blue)
+                .padding(.horizontal)
+                .onChange(of: sliderValue) { _ in
+                    // Haptic feedback for smooth interaction
+                    let generator = UIImpactFeedbackGenerator(style: .light)
+                    generator.impactOccurred()
+                }
+            
+            // Set Mood Button
+            Button(action: {
+                let formatter = DateFormatter()
+                formatter.dateFormat = "h:mm a"
+                let currentTime = formatter.string(from: Date())
+                
+                onSetMood(
+                    moodLabels[Int(sliderValue)],
+                    moodImages[Int(sliderValue)],
+                    currentTime
+                )
+                dismiss()
+            }) {
+                Text("Set Mood")
+                    .font(.headline)
+                    .foregroundColor(.white)
+                    .padding()
+                    .frame(maxWidth: .infinity)
+                    .background(Color.blue)
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+            }
+            .padding(.horizontal)
+            
+            Spacer() // Balance the layout to keep the image centered
+        }
+        .padding()
+        .background(Color.white)
     }
 }
 
@@ -412,7 +485,7 @@ struct FullCalendarView: View {
     func daysInSelectedMonth() -> [Int] {
         let calendar = Calendar.current
         var dateComponents = DateComponents()
-        dateComponents.year = selectedYear  // Use selectedYear instead of current year
+        dateComponents.year = selectedYear
         dateComponents.month = selectedMonth + 1
         
         guard let date = calendar.date(from: dateComponents),
