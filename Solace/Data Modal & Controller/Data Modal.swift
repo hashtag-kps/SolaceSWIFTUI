@@ -67,7 +67,9 @@ struct UserDailyMoodRecord: Codable, Equatable, Identifiable {
     let moodEmoji: String?
     let moodCategory: MoodCategory?
     let isFeedbackSubmitted: Bool?
+    let feedbackEmoji: String?
     let createdAt: Date
+    let feedbackMoodCategory: MoodCategory?
 
     enum CodingKeys: String, CodingKey {
         case id = "daily_record_id"
@@ -76,10 +78,11 @@ struct UserDailyMoodRecord: Codable, Equatable, Identifiable {
         case moodEmoji = "mood_emoji"
         case moodCategory = "mood_category"
         case isFeedbackSubmitted = "is_feedback_submitted"
+        case feedbackEmoji = "feedback_emoji"
         case createdAt = "created_at"
+        case feedbackMoodCategory = "feedback_mood_category"
     }
 }
-
 
 enum MoodCategory: String, CaseIterable,Codable{
     case veryPleasant = "Very Pleasant"
