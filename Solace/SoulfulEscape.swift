@@ -255,7 +255,7 @@ struct SoulfulEscape: View {
                                         .font(.title2)
                                         .fontWeight(.bold)
                                     Spacer()
-                                    Button(action: {}) {
+                                    NavigationLink(destination: SongsListView()) {
                                         Text("See all")
                                             .foregroundColor(.blue)
                                     }
@@ -449,16 +449,19 @@ struct SoulfulEscape: View {
                         .padding(.vertical)
                     }
                 }
+                // Move MiniPlayerView here
+                if (audioPlayer.isPlaying || audioPlayer.currentTime > 0) && !audioPlayer.showMediaPlayer {
+                    MiniPlayerView(
+                        audioPlayer: audioPlayer,
+                        songName: "Deep Sleep",
+                        songDescription: "Restorative sleep"
+                    )
+                    .onTapGesture {
+                        audioPlayer.showMediaPlayer = true
+                    }
+                }
             }
-        .padding(.bottom, audioPlayer.isPlaying && !audioPlayer.showMediaPlayer ? 60 : 0)
-        
-        if audioPlayer.isPlaying && !audioPlayer.showMediaPlayer {
-        MiniPlayerView(
-        audioPlayer: audioPlayer,
-        songName: "Deep Sleep",
-        songDescription: "Restorative sleep"
-        )
-        }
+            .padding(.bottom, 0)
         }
         .sheet(isPresented: $audioPlayer.showMediaPlayer) {
             MediaPlayerView(
@@ -493,5 +496,54 @@ struct SoulfulEscape: View {
 struct SoulfulEscape_Previews: PreviewProvider {
     static var previews: some View {
         SoulfulEscape()
+    }
+}
+
+struct SongsListView: View {
+    let songs = [
+        (image: "radiant", title: "Radiant", subtitle: "Positivity"),
+        (image: "harmonic_ease", title: "Harmonic Ease", subtitle: "Ease"),
+        (image: "elevated_spirit", title: "Elevated Spirit", subtitle: "Uplift"),
+        (image: "slumber", title: "Slumber", subtitle: "Sleep"),
+        (image: "joyful_calm", title: "Joyful Calm", subtitle: "Focus")
+    ]
+    var body: some View {
+        VStack(spacing: 0) {
+            List {
+                ForEach(songs, id: \.title) { song in
+                    HStack(spacing: 16) {
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(Color.gray.opacity(0.2))
+                                .frame(width: 80, height: 80)
+                            Image(song.image)
+                                .resizable()
+                                .aspectRatio(contentMode: .fill)
+                                .frame(width: 80, height: 80)
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                                )
+                        }
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(song.title)
+                                .font(.title3)
+                                .fontWeight(.semibold)
+                            Text(song.subtitle)
+                                .font(.subheadline)
+                                .foregroundColor(.gray)
+                        }
+                        Spacer()
+                    }
+                    .padding(.vertical, 8)
+                }
+            }
+            .listStyle(PlainListStyle())
+            Spacer()
+            // Mini player bar placeholder (if needed)
+        }
+        .navigationTitle("Songs")
+        .navigationBarTitleDisplayMode(.inline)
     }
 }

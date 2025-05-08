@@ -18,19 +18,6 @@ struct MediaPlayerView: View {
     var body: some View {
         ZStack {
             VStack(spacing: 20) {
-                // Add close button at the top
-                HStack {
-                    Spacer()
-                    Button(action: {
-                        audioPlayer.showMediaPlayer = false
-                    }) {
-                        Image(systemName: "xmark.circle.fill")
-                            .foregroundColor(.gray)
-                            .font(.title2)
-                    }
-                }
-                .padding(.horizontal)
-                
                 // Image and Title Section
                 VStack(spacing: 16) {
                     // Song Image
@@ -39,11 +26,32 @@ struct MediaPlayerView: View {
                         .frame(width: 300, height: 300)
                     
                     // Song Info
-                    VStack(spacing: 8) {
-                        Text(songName)
-                            .font(.headline)
-                        
+                    VStack(alignment: .leading, spacing: 8) {
                         HStack {
+                            Text(songName)
+                                .font(.headline)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                            Button(action: {
+                                isLiked.toggle()
+                            }) {
+                                Image(systemName: isLiked ? "heart.fill" : "heart")
+                                    .font(.title2)
+                                    .foregroundColor(isLiked ? .red : .gray)
+                            }
+                            Button(action: {
+                                isThumbsUp.toggle()
+                            }) {
+                                HStack {
+                                    Image(systemName: isThumbsUp ? "hand.thumbsup.fill" : "hand.thumbsup")
+                                        .foregroundColor(.orange)
+                                    Text("72K")
+                                        .font(.caption)
+                                        .foregroundColor(.gray)
+                                }
+                            }
+                        }
+                        .padding(.trailing, 32)
+                        HStack(spacing: 4) {
                             Text(songDescription)
                                 .foregroundColor(.gray)
                             Text("•")
@@ -52,19 +60,9 @@ struct MediaPlayerView: View {
                                 .foregroundColor(.gray)
                         }
                         .font(.caption)
-                        
-                        Button(action: {
-                            isThumbsUp.toggle()
-                        }) {
-                            HStack {
-                                Image(systemName: isThumbsUp ? "hand.thumbsup.fill" : "hand.thumbsup")
-                                    .foregroundColor(.orange)
-                                Text("72K")
-                                    .font(.caption)
-                                    .foregroundColor(.gray)
-                            }
-                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     }
+                    .padding(.leading, 32)
                 }
                 .padding(.top, 40)
                 
