@@ -558,13 +558,3 @@ struct LogMoodView: View {
 #Preview{
     ContentView()
 }
-Text("Explore")
-    .font(.title3)
-    .fontWeight(.semibold)
-HStack {
-    Text("See all")
-    NavigationLink(destination: SongsListView()) {
-        Text("See all")
-            .foregroundColor(.blue)
-    }
-}
