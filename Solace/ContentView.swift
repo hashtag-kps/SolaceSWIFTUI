@@ -43,6 +43,8 @@ struct ContentView: View {
     let moods = ["Very Happy", "Happy", "Neutral", "Sad", "Very Sad"]
     let moodEmojis = ["😊", "🙂", "😐", "🙁", "😢"]
     @State private var isLoggingMood = false
+    @State private var likedSongs: Set<String> = []
+    @State private var favoriteSongs: Set<String> = []
     
     var body: some View {
         TabView(selection: $selectedTab) {
@@ -131,60 +133,83 @@ struct ContentView: View {
                             HStack(spacing: 16) {
                                 ForEach(["Peaceful Glow", "Joyful Calm", "Blissful Focus"], id: \.self) { song in
                                     VStack(alignment: .leading, spacing: 8) {
-                                        ZStack(alignment: .topTrailing) {
+                                        ZStack(alignment: .bottomTrailing) {
                                             RoundedRectangle(cornerRadius: 16)
                                                 .fill(Color.gray.opacity(0.2))
-                                                .frame(width: 160, height: 160)  // Fixed width and height
+                                                .frame(width: 160, height: 160)
                                             
+                                            // Play button
                                             Button(action: {}) {
-                                                Image(systemName: "heart")
+                                                Image(systemName: "play.fill")
                                                     .foregroundColor(.white)
-                                                    .padding(12)
+                                                    .padding(8)
+                                                    .background(Color.blue)
+                                                    .clipShape(Circle())
                                             }
+                                            .padding(8)
+                                            
+                                            // Like and Favorite buttons at top
+                                            VStack {
+                                                HStack(spacing: 8) {
+                                                    Button(action: {
+                                                        if likedSongs.contains(song) {
+                                                            likedSongs.remove(song)
+                                                        } else {
+                                                            likedSongs.insert(song)
+                                                        }
+                                                    }) {
+                                                        Image(systemName: likedSongs.contains(song) ? "hand.thumbsup.fill" : "hand.thumbsup")
+                                                            .foregroundColor(.white)
+                                                            .padding(8)
+                                                            .background(Color.gray.opacity(0.5))
+                                                            .clipShape(Circle())
+                                                    }
+                                                    
+                                                    Button(action: {
+                                                        if favoriteSongs.contains(song) {
+                                                            favoriteSongs.remove(song)
+                                                        } else {
+                                                            favoriteSongs.insert(song)
+                                                        }
+                                                    }) {
+                                                        Image(systemName: favoriteSongs.contains(song) ? "heart.fill" : "heart")
+                                                            .foregroundColor(.white)
+                                                            .padding(8)
+                                                            .background(Color.gray.opacity(0.5))
+                                                            .clipShape(Circle())
+                                                    }
+                                                }
+                                                Spacer()
+                                            }
+                                            .padding(8)
                                         }
                                         
-                                        VStack(alignment: .leading, spacing: 4) {
-                                            Text(song)
-                                                .font(.headline)
-                                            
+                                        Text(song)
+                                            .font(.headline)
+                                        
+                                        HStack {
+                                            Text(song == "Peaceful Glow" ? "Calm Alertness" :
+                                                 song == "Joyful Calm" ? "Mindful Focus" : "Blissful State")
+                                                .foregroundColor(.gray)
+                                            Text("•")
+                                                .foregroundColor(.gray)
+                                            Text(song == "Peaceful Glow" ? "3 min" :
+                                                 song == "Joyful Calm" ? "4 min" : "5 min")
+                                                .foregroundColor(.gray)
+                                        }
+                                        .font(.caption)
+                                        
+                                        if song == "Peaceful Glow" {
                                             HStack {
-                                                Text(song == "Peaceful Glow" ? "Calm Alertness" : 
-                                                    song == "Joyful Calm" ? "Mindful Focus" : "Engaged Flow")
+                                                Image(systemName: "flame.fill")
+                                                    .foregroundColor(.orange)
+                                                Text("7.2K")
+                                                    .font(.caption)
                                                     .foregroundColor(.gray)
-                                                Text("•")
-                                                    .foregroundColor(.gray)
-                                                Text(song == "Peaceful Glow" ? "3 min" :
-                                                    song == "Joyful Calm" ? "4 min" : "3 min")
-                                                    .foregroundColor(.gray)
-                                            }
-                                            .font(.subheadline)
-                                            
-                                            if song == "Peaceful Glow" {
-                                                HStack {
-                                                    Image(systemName: "flame.fill")
-                                                        .foregroundColor(.orange)
-                                                    Text("7.2K")
-                                                        .font(.subheadline)
-                                                }
-                                            } else if song == "Joyful Calm" {
-                                                HStack {
-                                                    Image(systemName: "flame.fill")
-                                                        .foregroundColor(.orange)
-                                                    Text("301K")
-                                                        .font(.subheadline)
-                                                }
-                                            } else if song == "Blissful Focus" {
-                                                HStack {
-                                                    Image(systemName: "flame.fill")
-                                                        .foregroundColor(.orange)
-                                                    Text("8.2K")
-                                                        .font(.subheadline)
-                                                }
                                             }
                                         }
-                                        .padding(.horizontal, 4)
                                     }
-                                    .frame(width: 160)  // Fixed width to match image
+                                    .frame(width: 160)
                                 }
                             }
                             .padding(.horizontal)
@@ -532,4 +557,14 @@ struct LogMoodView: View {
 
 #Preview{
     ContentView()
+}
+Text("Explore")
+    .font(.title3)
+    .fontWeight(.semibold)
+HStack {
+    Text("See all")
+    NavigationLink(destination: SongsListView()) {
+        Text("See all")
+            .foregroundColor(.blue)
+    }
 }
