@@ -1,6 +1,7 @@
 import SwiftUI
 //geo
 struct ContentView: View {
+
     @State private var userName = "Jessica G. Anderson"
     @State private var currentMood = "Neutral" // Add this state variable
     @State private var selectedMood: String?
@@ -554,7 +555,14 @@ struct LogMoodView: View {
     }
 }
 
+struct ExploreView: View {
+    var body: some View {
+        VStack {
+            Text("Explore")
+        }
+    }
+}
 
-#Preview{
+#Preview {
     ContentView()
 }

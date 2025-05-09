@@ -2,7 +2,7 @@
 //  Data Modal.swift
 //  Solace
 //
-//  Created by Kavyansh Pratap Singh on 23/04/25.
+//  Created by Kavyansh Pratap Singh on 05/05/25.
 //
 
 import Foundation
@@ -60,24 +60,27 @@ struct Streak: Codable, Equatable, Identifiable {
     }
 }
 
-
-struct Mood: Codable, Equatable, Identifiable {
+struct UserDailyMoodRecord: Codable, Equatable, Identifiable {
     let id: UUID
     let userId: UUID
-    let moodEmoji: String
-    let moodCategory: MoodCategory
     let date: Date
-    let isFeedbackSubmitted: Bool
+    let moodEmoji: String?
+    let moodCategory: MoodCategory?
+    let isFeedbackSubmitted: Bool?
+    let feedbackEmoji: String?
     let createdAt: Date
+    let feedbackMoodCategory: MoodCategory?
 
     enum CodingKeys: String, CodingKey {
-        case id = "mood_id"
+        case id = "daily_record_id"
         case userId = "user_id"
+        case date
         case moodEmoji = "mood_emoji"
         case moodCategory = "mood_category"
-        case date
         case isFeedbackSubmitted = "is_feedback_submitted"
+        case feedbackEmoji = "feedback_emoji"
         case createdAt = "created_at"
+        case feedbackMoodCategory = "feedback_mood_category"
     }
 }
 
@@ -95,7 +98,7 @@ struct SoulfulEscapeSong: Codable, Equatable, Identifiable {
     let title: String
     let subtitle: String
     let duration: Double
-    let category: String
+    let category: MoodCategory
     let likeCount: Int
     let fileUrl: String
     let createdAt: Date
@@ -113,33 +116,114 @@ struct SoulfulEscapeSong: Codable, Equatable, Identifiable {
     }
 }
 
-struct LikedSong: Codable, Equatable, Identifiable {
+struct LikedSong: Codable, Identifiable {
     let id: UUID
     let userId: UUID
     let songId: UUID
-    let createdAt: Date
-
+    let title: String
+    let url: String
+    let moodCategory: MoodCategory
+    let imageName: String
+    let subtitle: String // Added
+    let duration: Double
+    let likeCount: Int // Added
+    let songCreatedAt: Date
+    let interactionCreatedAt: Date
+    
     enum CodingKeys: String, CodingKey {
-        case id = "like_id"
+        case id = "interaction_id"
         case userId = "user_id"
         case songId = "song_id"
-        case createdAt = "created_at"
+        case title
+        case url = "file_url"
+        case moodCategory = "mood_category"
+        case imageName = "image_name"
+        case subtitle
+        case duration
+        case likeCount = "like_count"
+        case songCreatedAt = "song_created_at"
+        case interactionCreatedAt = "created_at"
     }
 }
 
-struct FavoriteSong: Codable, Equatable, Identifiable {
+struct FavoriteSong: Codable, Identifiable {
     let id: UUID
     let userId: UUID
     let songId: UUID
-    let createdAt: Date
-
+    let title: String
+    let url: String
+    let moodCategory: MoodCategory
+    let imageName: String
+    let subtitle: String // Added
+    let duration: Double
+    let likeCount: Int // Added
+    let songCreatedAt: Date
+    let interactionCreatedAt: Date
+    
     enum CodingKeys: String, CodingKey {
-        case id = "favorite_id"
+        case id = "interaction_id"
         case userId = "user_id"
         case songId = "song_id"
-        case createdAt = "created_at"
+        case title
+        case url = "file_url"
+        case moodCategory = "mood_category"
+        case imageName = "image_name"
+        case subtitle
+        case duration
+        case likeCount = "like_count"
+        case songCreatedAt = "song_created_at"
+        case interactionCreatedAt = "created_at"
     }
 }
+
+
+struct UserSongInteraction: Codable {
+    let interactionId: UUID
+    let userId: UUID
+    let songId: UUID
+    let isLiked: Bool
+    let isFavourited: Bool
+    let createdAt: Date
+    let updatedAt: Date
+    
+    enum CodingKeys: String, CodingKey {
+        case interactionId = "interaction_id"
+        case userId = "user_id"
+        case songId = "song_id"
+        case isLiked = "is_liked"
+        case isFavourited = "is_favourited"
+        case createdAt = "created_at"
+        case updatedAt = "updated_at"
+    }
+}
+
+//struct LikedSong: Codable, Equatable, Identifiable {
+//    let id: UUID
+//    let userId: UUID
+//    let songId: UUID
+//    let createdAt: Date
+//
+//    enum CodingKeys: String, CodingKey {
+//        case id = "like_id"
+//        case userId = "user_id"
+//        case songId = "song_id"
+//        case createdAt = "created_at"
+//    }
+//}
+
+//struct FavoriteSong: Codable, Equatable, Identifiable {
+//    let id: UUID
+//    let userId: UUID
+//    let songId: UUID
+//    let createdAt: Date
+//
+//    enum CodingKeys: String, CodingKey {
+//        case id = "favorite_id"
+//        case userId = "user_id"
+//        case songId = "song_id"
+//        case createdAt = "created_at"
+//    }
+//}
 
 struct PeacePointTherapy: Codable, Equatable, Identifiable {
     let id: UUID
@@ -326,32 +410,51 @@ struct PurchasedSong: Codable, Equatable, Identifiable {
     }
 }
 
+//struct CompletedSession: Codable, Equatable, Identifiable {
+//    let id: UUID
+//    let userId: UUID
+//    let songId: UUID?
+//    let therapyId: UUID?
+//    let completedAt: Date
+//
+//    enum CodingKeys: String, CodingKey {
+//        case id = "session_id"
+//        case userId = "user_id"
+//        case songId = "song_id"
+//        case therapyId = "therapy_id"
+//        case completedAt = "completed_at"
+//    }
+//}
+
 struct CompletedSession: Codable, Equatable, Identifiable {
     let id: UUID
     let userId: UUID
-    let songId: UUID?
-    let therapyId: UUID?
+    let songIds: [UUID]?
+    let therapyIds: [UUID]?
+    let progress: Float
     let completedAt: Date
 
     enum CodingKeys: String, CodingKey {
         case id = "session_id"
         case userId = "user_id"
-        case songId = "song_id"
-        case therapyId = "therapy_id"
+        case songIds = "song_ids"
+        case therapyIds = "therapy_ids"
+        case progress
         case completedAt = "completed_at"
     }
 }
 
-struct FilledDay: Codable, Equatable, Identifiable {
-    let id: UUID
-    let userId: UUID
-    let date: Date
-    let createdAt: Date
 
-    enum CodingKeys: String, CodingKey {
-        case id = "filled_day_id"
-        case userId = "user_id"
-        case date
-        case createdAt = "created_at"
-    }
+struct UserSongInteractionUpdate: Encodable {
+    let is_liked: Bool
+    let updated_at: String
+}
+
+
+struct UserSongInteractionInsert: Encodable {
+    let user_id: UUID
+    let song_id: UUID
+    let is_liked: Bool
+    let created_at: String
+    let updated_at: String
 }
