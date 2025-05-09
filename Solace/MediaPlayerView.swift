@@ -4,6 +4,7 @@ struct MediaPlayerView: View {
     @ObservedObject var audioPlayer: AudioPlayerManager
     let songName: String
     let songDescription: String
+    let thumbsUp: String
     @Binding var isLiked: Bool
     @Binding var isThumbsUp: Bool
     
@@ -44,7 +45,7 @@ struct MediaPlayerView: View {
                                 HStack {
                                     Image(systemName: isThumbsUp ? "hand.thumbsup.fill" : "hand.thumbsup")
                                         .foregroundColor(.orange)
-                                    Text("72K")
+                                    Text(thumbsUp)
                                         .font(.caption)
                                         .foregroundColor(.gray)
                                 }
@@ -92,15 +93,15 @@ struct MediaPlayerView: View {
                 // Control Buttons
                 HStack(spacing: 40) {
                     Button(action: {
-                        isLiked.toggle()
+                        audioPlayer.toggleShuffle()
                     }) {
-                        Image(systemName: isLiked ? "heart.fill" : "heart")
+                        Image(systemName: "shuffle")
                             .font(.title2)
-                            .foregroundColor(isLiked ? .red : .gray)
+                            .foregroundColor(audioPlayer.isShuffle ? .blue : .gray)
                     }
                     
                     Button(action: {
-                        // Previous track
+                        audioPlayer.previous()
                     }) {
                         Image(systemName: "backward.fill")
                             .font(.title)
@@ -116,7 +117,7 @@ struct MediaPlayerView: View {
                     }
                     
                     Button(action: {
-                        // Next track
+                        audioPlayer.next()
                     }) {
                         Image(systemName: "forward.fill")
                             .font(.title)
@@ -124,11 +125,11 @@ struct MediaPlayerView: View {
                     }
                     
                     Button(action: {
-                        // Add repeat action
+                        audioPlayer.toggleRepeat()
                     }) {
                         Image(systemName: "repeat")
                             .font(.title2)
-                            .foregroundColor(.gray)
+                            .foregroundColor(audioPlayer.isRepeat ? .blue : .gray)
                     }
                 }
                 .padding(.vertical, 30)

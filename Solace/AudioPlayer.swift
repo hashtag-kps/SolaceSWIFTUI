@@ -1,7 +1,7 @@
 import SwiftUI
 import AVFoundation
 
-class AudioPlayerManager: ObservableObject {
+class AudioPlayerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
     private var audioPlayer: AVAudioPlayer?
     @Published var isPlaying = false
     @Published var isFavorite = false
@@ -10,7 +10,16 @@ class AudioPlayerManager: ObservableObject {
     @Published var duration: TimeInterval = 0
     private var timer: Timer?
     
+    // Playlist and controls
+    var playlist: [String] = ["DeepSleep", "InnsomiaHeal", "DeepThinking"]
+    @Published var currentIndex: Int = 0
+    @Published var isShuffle: Bool = false
+    @Published var isRepeat: Bool = false
+    
     func play(songName: String) {
+        if let idx = playlist.firstIndex(of: songName) {
+            currentIndex = idx
+        }
         guard let path = Bundle.main.path(forResource: songName, ofType: "mp3") else {
             print("Could not find \(songName).mp3")
             return
@@ -18,6 +27,7 @@ class AudioPlayerManager: ObservableObject {
         
         do {
             audioPlayer = try AVAudioPlayer(contentsOf: URL(fileURLWithPath: path))
+            audioPlayer?.delegate = self
             audioPlayer?.prepareToPlay()
             audioPlayer?.play()
             isPlaying = true
@@ -68,5 +78,45 @@ class AudioPlayerManager: ObservableObject {
     func seek(to time: TimeInterval) {
         audioPlayer?.currentTime = time
         currentTime = time
+    }
+    
+    func playCurrent() {
+        let songName = playlist[currentIndex]
+        play(songName: songName)
+    }
+    
+    func next() {
+        if isShuffle {
+            currentIndex = Int.random(in: 0..<playlist.count)
+        } else {
+            currentIndex = (currentIndex + 1) % playlist.count
+        }
+        playCurrent()
+    }
+    
+    func previous() {
+        if isShuffle {
+            currentIndex = Int.random(in: 0..<playlist.count)
+        } else {
+            currentIndex = (currentIndex - 1 + playlist.count) % playlist.count
+        }
+        playCurrent()
+    }
+    
+    func toggleShuffle() {
+        isShuffle.toggle()
+    }
+    
+    func toggleRepeat() {
+        isRepeat.toggle()
+    }
+    
+    // AVAudioPlayerDelegate method
+    func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
+        if isRepeat {
+            playCurrent()
+        } else {
+            next()
+        }
     }
 }

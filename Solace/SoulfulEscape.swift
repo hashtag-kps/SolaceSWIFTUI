@@ -1,5 +1,11 @@
 import SwiftUI
 
+struct Song: Equatable {
+    let name: String
+    let description: String
+    let thumbsUp: String
+}
+
 struct SoulfulEscape: View {
     @State private var searchText = ""
     @State private var selectedMood = "Sad"
@@ -9,6 +15,7 @@ struct SoulfulEscape: View {
     @State private var isSearching = false
     let moods = ["Sad", "Uneasy", "Nervous", "Frustrated", "Hyper", "Furious"]
     @StateObject private var audioPlayer = AudioPlayerManager()
+    @State private var currentSong: Song? = nil
     
     var body: some View {
         NavigationView {
@@ -112,349 +119,23 @@ struct SoulfulEscape: View {
                             }
                             
                             // Mood Tunes Section
-                            VStack(alignment: .leading, spacing: 16) {
-                                Text("Mood Tunes")
-                                    .font(.title2)
-                                    .fontWeight(.bold)
-                                    .padding(.horizontal)
-                                
-                                ScrollView(.horizontal, showsIndicators: false) {
-                                    HStack(spacing: 16) {
-                                        ForEach(["Deep Sleep", "Insomnia Heal", "Deep Thinking"], id: \.self) { tune in
-                                            VStack(alignment: .leading, spacing: 8) {
-                                                ZStack {
-                                                    RoundedRectangle(cornerRadius: 12)
-                                                        .fill(Color.gray.opacity(0.2))
-                                                        .frame(width: 160, height: 160)
-                                                        .contextMenu {
-                                                            Button(action: {}) {
-                                                                Label("Add to playlist", systemImage: "plus")
-                                                            }
-                                                            
-                                                            Button(action: {}) {
-                                                                Label("Create New Playlist", systemImage: "music.note.list")
-                                                            }
-                                                        }
-                                                    
-                                                    // Add heart button in top-right corner
-                                                    VStack {
-                                                        HStack {
-                                                            Spacer()
-                                                            Button(action: {
-                                                                if favoriteTunes.contains(tune) {
-                                                                    favoriteTunes.remove(tune)
-                                                                } else {
-                                                                    favoriteTunes.insert(tune)
-                                                                }
-                                                            }) {
-                                                                Image(systemName: favoriteTunes.contains(tune) ? "heart.fill" : "heart")
-                                                                    .foregroundColor(.white)
-                                                                    .padding(8)
-                                                            }
-                                                        }
-                                                        Spacer()
-                                                    }
-                                                    .padding(8)
-                                                    
-                                                    // Play button at bottom-right
-                                                    VStack {
-                                                        Spacer()
-                                                        HStack {
-                                                            Spacer()
-                                                            Button(action: {
-                                                                if tune == "Deep Sleep" {
-                                                                    audioPlayer.togglePlayback(songName: "DeepSleep")
-                                                                }
-                                                            }) {
-                                                                Image(systemName: audioPlayer.isPlaying && tune == "Deep Sleep" ? "pause.fill" : "play.fill")
-                                                                    .foregroundColor(.white)
-                                                                    .padding(8)
-                                                                    .background(Color.blue)
-                                                                    .clipShape(Circle())
-                                                            }
-                                                        }
-                                                    }
-                                                    .padding(8)
-                                                }
-                                                
-                                                VStack(alignment: .leading, spacing: 4) {
-                                                    Text(tune)
-                                                        .font(.headline)
-                                                    
-                                                    HStack {
-                                                        Text(tune == "Deep Sleep" ? "Restorative sleep" : 
-                                                             tune == "Insomnia Heal" ? "Cellular healing" : "Calm creativity")
-                                                            .foregroundColor(.gray)
-                                                        Text("•")
-                                                            .foregroundColor(.gray)
-                                                        Text(tune == "Deep Sleep" ? "4 min" :
-                                                             tune == "Insomnia Heal" ? "3 min" : "3 min")
-                                                            .foregroundColor(.gray)
-                                                    }
-                                                    .font(.caption)
-                                                    
-                                                    if tune == "Deep Sleep" {
-                                                        HStack {
-                                                            Button(action: {
-                                                                if likedTunes.contains("Deep Sleep") {
-                                                                    likedTunes.remove("Deep Sleep")
-                                                                } else {
-                                                                    likedTunes.insert("Deep Sleep")
-                                                                }
-                                                            }) {
-                                                                Image(systemName: likedTunes.contains("Deep Sleep") ? "hand.thumbsup.fill" : "hand.thumbsup")
-                                                                    .foregroundColor(.orange)
-                                                            }
-                                                            Text("72K")
-                                                                .font(.caption)
-                                                        }
-                                                    } else if tune == "Insomnia Heal" {
-                                                        HStack {
-                                                            Button(action: {
-                                                                if likedTunes.contains("Insomnia Heal") {
-                                                                    likedTunes.remove("Insomnia Heal")
-                                                                } else {
-                                                                    likedTunes.insert("Insomnia Heal")
-                                                                }
-                                                            }) {
-                                                                Image(systemName: likedTunes.contains("Insomnia Heal") ? "hand.thumbsup.fill" : "hand.thumbsup")
-                                                                    .foregroundColor(.orange)
-                                                            }
-                                                            Text("301K")
-                                                                .font(.caption)
-                                                        }
-                                                    } else if tune == "Deep Thinking" {
-                                                        HStack {
-                                                            Button(action: {
-                                                                if likedTunes.contains("Deep Thinking") {
-                                                                    likedTunes.remove("Deep Thinking")
-                                                                } else {
-                                                                    likedTunes.insert("Deep Thinking")
-                                                                }
-                                                            }) {
-                                                                Image(systemName: likedTunes.contains("Deep Thinking") ? "hand.thumbsup.fill" : "hand.thumbsup")
-                                                                    .foregroundColor(.orange)
-                                                            }
-                                                            Text("82K")
-                                                                .font(.caption)
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                        .frame(width: 160)
-                                    }
-                                }
-                                .padding(.horizontal)
-                            }
+                            MoodTunesSection(likedTunes: $likedTunes, favoriteTunes: $favoriteTunes, audioPlayer: audioPlayer, currentSong: $currentSong)
                             
                             // Explore Section
-                            VStack(alignment: .leading, spacing: 16) {
-                                HStack {
-                                    Text("Explore")
-                                        .font(.title2)
-                                        .fontWeight(.bold)
-                                    Spacer()
-                                    NavigationLink(destination: SongsListView()) {
-                                        Text("See all")
-                                            .foregroundColor(.blue)
-                                    }
-                                }
-                                .padding(.horizontal)
-                                
-                                ScrollView(.horizontal, showsIndicators: false) {
-                                    HStack(spacing: 16) {
-                                        VStack(spacing: 16) {
-                                            ForEach(["Radiant", "Elevated Spirit", "Joyful Calm"], id: \.self) { item in
-                                                HStack(spacing: 16) {
-                                                    // Image placeholder
-                                                    RoundedRectangle(cornerRadius: 12)
-                                                        .fill(Color.gray.opacity(0.2))
-                                                        .frame(width: 80, height: 80)
-                                                    
-                                                    VStack(alignment: .leading, spacing: 4) {
-                                                        Text(item)
-                                                            .font(.headline)
-                                                        Text(item == "Radiant" ? "Positivity" :
-                                                             item == "Elevated Spirit" ? "Uplift" : "Focus")
-                                                            .font(.subheadline)
-                                                            .foregroundColor(.gray)
-                                                    }
-                                                    
-                                                    Spacer()
-                                                    
-                                                    Button(action: {}) {
-                                                        Image(systemName: "ellipsis")
-                                                            .foregroundColor(.gray)
-                                                            .padding(8)
-                                                            .background(Color.gray.opacity(0.1))
-                                                            .clipShape(Circle())
-                                                    }
-                                                    .contextMenu {
-                                                        Button(action: {}) {
-                                                            Label("Add to playlist", systemImage: "plus")
-                                                        }
-                                                        
-                                                        Button(action: {}) {
-                                                            Label("Create New Playlist", systemImage: "music.note.list")
-                                                        }
-                                                    }
-                                                }
-                                                .frame(width: 300)
-                                                .padding()
-                                                .background(Color(.systemBackground))
-                                                .cornerRadius(16)
-                                                .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 2)
-                                            }
-                                        }
-                                        
-                                        // Additional tunes column
-                                        VStack(spacing: 16) {
-                                            ForEach(["Harmonic Ease", "Slumber", "Inner Peace"], id: \.self) { item in
-                                                HStack(spacing: 16) {
-                                                    // Image placeholder
-                                                    RoundedRectangle(cornerRadius: 12)
-                                                        .fill(Color.gray.opacity(0.2))
-                                                        .frame(width: 80, height: 80)
-                                                    
-                                                    VStack(alignment: .leading, spacing: 4) {
-                                                        Text(item)
-                                                            .font(.headline)
-                                                        Text(item == "Harmonic Ease" ? "Ease" :
-                                                             item == "Slumber" ? "Sleep" : "Calm")
-                                                            .font(.subheadline)
-                                                            .foregroundColor(.gray)
-                                                    }
-                                                    
-                                                    Spacer()
-                                                    
-                                                    Button(action: {
-                                                        showingMenu = true
-                                                    }) {
-                                                        Image(systemName: "ellipsis")
-                                                            .foregroundColor(.gray)
-                                                            .padding(8)
-                                                            .background(Color.gray.opacity(0.1))
-                                                            .clipShape(Circle())
-                                                    }
-                                                    .sheet(isPresented: $showingMenu) {
-                                                        VStack(spacing: 0) {
-                                                            Button(action: {
-                                                                showingMenu = false
-                                                            }) {
-                                                                HStack {
-                                                                    Text("Add to playlist")
-                                                                        .foregroundColor(.black)
-                                                                    Spacer()
-                                                                    Image(systemName: "plus")
-                                                                        .foregroundColor(.black)
-                                                                }
-                                                                .padding()
-                                                            }
-                                                            
-                                                            Divider()
-                                                            
-                                                            Button(action: {
-                                                                showingMenu = false
-                                                            }) {
-                                                                HStack {
-                                                                    Text("Create New Playlist")
-                                                                        .foregroundColor(.black)
-                                                                    Spacer()
-                                                                    Image(systemName: "music.note.list")
-                                                                        .foregroundColor(.black)
-                                                                }
-                                                                .padding()
-                                                            }
-                                                        }
-                                                        .background(.ultraThinMaterial)
-                                                        .presentationDetents([.height(120)])
-                                                        .presentationBackground(.ultraThinMaterial)
-                                                    }
-                                                    .popover(isPresented: $showingMenu) {
-                                                        VStack(spacing: 0) {
-                                                            Button(action: {
-                                                                showingMenu = false
-                                                            }) {
-                                                                HStack {
-                                                                    Text("Add to playlist")
-                                                                        .foregroundColor(.black)
-                                                                    Spacer()
-                                                                    Image(systemName: "plus")
-                                                                        .foregroundColor(.black)
-                                                                }
-                                                                .padding()
-                                                            }
-                                                            
-                                                            Divider()
-                                                            
-                                                            Button(action: {
-                                                                showingMenu = false
-                                                            }) {
-                                                                HStack {
-                                                                    Text("Create New Playlist")
-                                                                        .foregroundColor(.black)
-                                                                    Spacer()
-                                                                    Image(systemName: "music.note.list")
-                                                                        .foregroundColor(.black)
-                                                                }
-                                                                .padding()
-                                                            }
-                                                        }
-                                                        .background(Color(.systemBackground))
-                                                        .frame(width: 250)
-                                                        .cornerRadius(14)
-                                                    }
-                                                }
-                                                .frame(width: 300)
-                                                .padding()
-                                                .background(Color(.systemBackground))
-                                                .cornerRadius(16)
-                                                .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 2)
-                                            }
-                                        }
-                                    }
-                                }
-                                .padding(.horizontal)
-                            }
+                            ExploreSection(showingMenu: $showingMenu)
                             
                             // Nature Tunes Section
-                            VStack(alignment: .leading, spacing: 16) {
-                                Text("Nature Tunes")
-                                    .font(.title2)
-                                    .fontWeight(.bold)
-                                    .padding(.horizontal)
-                                
-                                ScrollView(.horizontal, showsIndicators: false) {
-                                    HStack(spacing: 16) {
-                                        ForEach(0..<4) { _ in
-                                            RoundedRectangle(cornerRadius: 12)
-                                                .fill(Color.gray.opacity(0.2))
-                                                .frame(width: 160, height: 160)
-                                                .contextMenu {
-                                                    Button(action: {}) {
-                                                        Label("Add to playlist", systemImage: "plus")
-                                                    }
-                                                    
-                                                    Button(action: {}) {
-                                                        Label("Create New Playlist", systemImage: "music.note.list")
-                                                    }
-                                                }
-                                        }
-                                    }
-                                    .padding(.horizontal)
-                                }
-                            }
+                            NatureTunesSection()
                         }
                         .padding(.vertical)
                     }
                 }
                 // Move MiniPlayerView here
-                if (audioPlayer.isPlaying || audioPlayer.currentTime > 0) && !audioPlayer.showMediaPlayer {
+                if let song = currentSong, (audioPlayer.isPlaying || audioPlayer.currentTime > 0) && !audioPlayer.showMediaPlayer {
                     MiniPlayerView(
                         audioPlayer: audioPlayer,
-                        songName: "Deep Sleep",
-                        songDescription: "Restorative sleep"
+                        songName: song.name,
+                        songDescription: song.description
                     )
                     .onTapGesture {
                         audioPlayer.showMediaPlayer = true
@@ -462,33 +143,49 @@ struct SoulfulEscape: View {
                 }
             }
             .padding(.bottom, 0)
+            .onChange(of: audioPlayer.currentIndex) {
+                let songName = audioPlayer.playlist[$0]
+                switch songName {
+                case "DeepSleep":
+                    currentSong = Song(name: "Deep Sleep", description: "Restorative sleep", thumbsUp: "72K")
+                case "InnsomiaHeal":
+                    currentSong = Song(name: "Insomnia Heal", description: "Cellular healing", thumbsUp: "301K")
+                case "DeepThinking":
+                    currentSong = Song(name: "Deep Thinking", description: "Calm creativity", thumbsUp: "82K")
+                default:
+                    break
+                }
+            }
         }
         .sheet(isPresented: $audioPlayer.showMediaPlayer) {
-            MediaPlayerView(
-                audioPlayer: audioPlayer,
-                songName: "Deep Sleep",
-                songDescription: "Restorative sleep",
-                isLiked: Binding(
-                    get: { favoriteTunes.contains("Deep Sleep") },
-                    set: { newValue in
-                        if newValue {
-                            favoriteTunes.insert("Deep Sleep")
-                        } else {
-                            favoriteTunes.remove("Deep Sleep")
+            if let song = currentSong {
+                MediaPlayerView(
+                    audioPlayer: audioPlayer,
+                    songName: song.name,
+                    songDescription: song.description,
+                    thumbsUp: song.thumbsUp,
+                    isLiked: Binding(
+                        get: { favoriteTunes.contains(song.name) },
+                        set: { newValue in
+                            if newValue {
+                                favoriteTunes.insert(song.name)
+                            } else {
+                                favoriteTunes.remove(song.name)
+                            }
                         }
-                    }
-                ),
-                isThumbsUp: Binding(
-                    get: { likedTunes.contains("Deep Sleep") },
-                    set: { newValue in
-                        if newValue {
-                            likedTunes.insert("Deep Sleep")
-                        } else {
-                            likedTunes.remove("Deep Sleep")
+                    ),
+                    isThumbsUp: Binding(
+                        get: { likedTunes.contains(song.name) },
+                        set: { newValue in
+                            if newValue {
+                                likedTunes.insert(song.name)
+                            } else {
+                                likedTunes.remove(song.name)
+                            }
                         }
-                    }
+                    )
                 )
-            )
+            }
         }
     }
 }
@@ -545,5 +242,290 @@ struct SongsListView: View {
         }
         .navigationTitle("Songs")
         .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+struct MoodTunesSection: View {
+    @Binding var likedTunes: Set<String>
+    @Binding var favoriteTunes: Set<String>
+    @ObservedObject var audioPlayer: AudioPlayerManager
+    @Binding var currentSong: Song?
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Mood Tunes")
+                .font(.title2)
+                .fontWeight(.bold)
+                .padding(.horizontal)
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 16) {
+                    ForEach(["Deep Sleep", "Insomnia Heal", "Deep Thinking"], id: \.self) { tune in
+                        VStack(alignment: .leading, spacing: 8) {
+                            ZStack {
+                                RoundedRectangle(cornerRadius: 12)
+                                    .fill(Color.gray.opacity(0.2))
+                                    .frame(width: 160, height: 160)
+                                    .contextMenu {
+                                        Button(action: {}) {
+                                            Label("Add to playlist", systemImage: "plus")
+                                        }
+                                        Button(action: {}) {
+                                            Label("Create New Playlist", systemImage: "music.note.list")
+                                        }
+                                    }
+                                VStack {
+                                    HStack {
+                                        Spacer()
+                                        Button(action: {
+                                            if favoriteTunes.contains(tune) {
+                                                favoriteTunes.remove(tune)
+                                            } else {
+                                                favoriteTunes.insert(tune)
+                                            }
+                                        }) {
+                                            Image(systemName: favoriteTunes.contains(tune) ? "heart.fill" : "heart")
+                                                .foregroundColor(.white)
+                                                .padding(8)
+                                        }
+                                    }
+                                    Spacer()
+                                }
+                                .padding(8)
+                                VStack {
+                                    Spacer()
+                                    HStack {
+                                        Spacer()
+                                        Button(action: {
+                                            switch tune {
+                                            case "Deep Sleep":
+                                                currentSong = Song(name: "Deep Sleep", description: "Restorative sleep", thumbsUp: "72K")
+                                                audioPlayer.play(songName: "DeepSleep")
+                                            case "Insomnia Heal":
+                                                currentSong = Song(name: "Insomnia Heal", description: "Cellular healing", thumbsUp: "301K")
+                                                audioPlayer.play(songName: "InnsomiaHeal")
+                                            case "Deep Thinking":
+                                                currentSong = Song(name: "Deep Thinking", description: "Calm creativity", thumbsUp: "82K")
+                                                audioPlayer.play(songName: "DeepThinking")
+                                            default:
+                                                break
+                                            }
+                                        }) {
+                                            Image(systemName: audioPlayer.isPlaying && tune == "Deep Sleep" ? "pause.fill" : "play.fill")
+                                                .foregroundColor(.white)
+                                                .padding(8)
+                                                .background(Color.blue)
+                                                .clipShape(Circle())
+                                        }
+                                    }
+                                }
+                                .padding(8)
+                            }
+                            .onTapGesture {
+                                switch tune {
+                                case "Deep Sleep":
+                                    currentSong = Song(name: "Deep Sleep", description: "Restorative sleep", thumbsUp: "72K")
+                                    audioPlayer.play(songName: "DeepSleep")
+                                case "Insomnia Heal":
+                                    currentSong = Song(name: "Insomnia Heal", description: "Cellular healing", thumbsUp: "301K")
+                                    audioPlayer.play(songName: "InnsomiaHeal")
+                                case "Deep Thinking":
+                                    currentSong = Song(name: "Deep Thinking", description: "Calm creativity", thumbsUp: "82K")
+                                    audioPlayer.play(songName: "DeepThinking")
+                                default:
+                                    break
+                                }
+                            }
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(tune)
+                                    .font(.headline)
+                                HStack {
+                                    Text(tune == "Deep Sleep" ? "Restorative sleep" : 
+                                         tune == "Insomnia Heal" ? "Cellular healing" : "Calm creativity")
+                                        .foregroundColor(.gray)
+                                    Text("•")
+                                        .foregroundColor(.gray)
+                                    Text(tune == "Deep Sleep" ? "4 min" :
+                                         tune == "Insomnia Heal" ? "3 min" : "3 min")
+                                        .foregroundColor(.gray)
+                                }
+                                .font(.caption)
+                                if tune == "Deep Sleep" {
+                                    HStack {
+                                        Button(action: {
+                                            if likedTunes.contains("Deep Sleep") {
+                                                likedTunes.remove("Deep Sleep")
+                                            } else {
+                                                likedTunes.insert("Deep Sleep")
+                                            }
+                                        }) {
+                                            Image(systemName: likedTunes.contains("Deep Sleep") ? "hand.thumbsup.fill" : "hand.thumbsup")
+                                                .foregroundColor(.orange)
+                                        }
+                                        Text("72K")
+                                            .font(.caption)
+                                    }
+                                } else if tune == "Insomnia Heal" {
+                                    HStack {
+                                        Button(action: {
+                                            if likedTunes.contains("Insomnia Heal") {
+                                                likedTunes.remove("Insomnia Heal")
+                                            } else {
+                                                likedTunes.insert("Insomnia Heal")
+                                            }
+                                        }) {
+                                            Image(systemName: likedTunes.contains("Insomnia Heal") ? "hand.thumbsup.fill" : "hand.thumbsup")
+                                                .foregroundColor(.orange)
+                                        }
+                                        Text("301K")
+                                            .font(.caption)
+                                    }
+                                } else if tune == "Deep Thinking" {
+                                    HStack {
+                                        Button(action: {
+                                            if likedTunes.contains("Deep Thinking") {
+                                                likedTunes.remove("Deep Thinking")
+                                            } else {
+                                                likedTunes.insert("Deep Thinking")
+                                            }
+                                        }) {
+                                            Image(systemName: likedTunes.contains("Deep Thinking") ? "hand.thumbsup.fill" : "hand.thumbsup")
+                                                .foregroundColor(.orange)
+                                        }
+                                        Text("82K")
+                                            .font(.caption)
+                                    }
+                                }
+                            }
+                        }
+                        .frame(width: 160)
+                    }
+                }
+                .padding(.horizontal)
+            }
+        }
+    }
+}
+
+struct ExploreSection: View {
+    @Binding var showingMenu: Bool
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack {
+                Text("Explore")
+                    .font(.title2)
+                    .fontWeight(.bold)
+                Spacer()
+                NavigationLink(destination: SongsListView()) {
+                    Text("See all")
+                        .foregroundColor(.blue)
+                }
+            }
+            .padding(.horizontal)
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 16) {
+                    VStack(spacing: 16) {
+                        ForEach(["Radiant", "Elevated Spirit", "Joyful Calm"], id: \.self) { item in
+                            HStack(spacing: 16) {
+                                RoundedRectangle(cornerRadius: 12)
+                                    .fill(Color.gray.opacity(0.2))
+                                    .frame(width: 80, height: 80)
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(item)
+                                        .font(.headline)
+                                    Text(item == "Radiant" ? "Positivity" :
+                                         item == "Elevated Spirit" ? "Uplift" : "Focus")
+                                        .font(.subheadline)
+                                        .foregroundColor(.gray)
+                                }
+                                Spacer()
+                                Button(action: {}) {
+                                    Image(systemName: "ellipsis")
+                                        .foregroundColor(.gray)
+                                        .padding(8)
+                                        .background(Color.gray.opacity(0.1))
+                                        .clipShape(Circle())
+                                }
+                                .contextMenu {
+                                    Button(action: {}) {
+                                        Label("Add to playlist", systemImage: "plus")
+                                    }
+                                    Button(action: {}) {
+                                        Label("Create New Playlist", systemImage: "music.note.list")
+                                    }
+                                }
+                            }
+                            .frame(width: 300)
+                            .padding()
+                            .background(Color(.systemBackground))
+                            .cornerRadius(16)
+                            .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 2)
+                        }
+                    }
+                    VStack(spacing: 16) {
+                        ForEach(["Harmonic Ease", "Slumber", "Inner Peace"], id: \.self) { item in
+                            HStack(spacing: 16) {
+                                RoundedRectangle(cornerRadius: 12)
+                                    .fill(Color.gray.opacity(0.2))
+                                    .frame(width: 80, height: 80)
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(item)
+                                        .font(.headline)
+                                    Text(item == "Harmonic Ease" ? "Ease" :
+                                         item == "Slumber" ? "Sleep" : "Calm")
+                                        .font(.subheadline)
+                                        .foregroundColor(.gray)
+                                }
+                                Spacer()
+                                Button(action: {
+                                    showingMenu = true
+                                }) {
+                                    Image(systemName: "ellipsis")
+                                        .foregroundColor(.gray)
+                                        .padding(8)
+                                        .background(Color.gray.opacity(0.1))
+                                        .clipShape(Circle())
+                                }
+                                // Sheet and popover omitted for brevity
+                            }
+                            .frame(width: 300)
+                            .padding()
+                            .background(Color(.systemBackground))
+                            .cornerRadius(16)
+                            .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 2)
+                        }
+                    }
+                }
+                .padding(.horizontal)
+            }
+        }
+    }
+}
+
+struct NatureTunesSection: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Nature Tunes")
+                .font(.title2)
+                .fontWeight(.bold)
+                .padding(.horizontal)
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 16) {
+                    ForEach(0..<4) { _ in
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(Color.gray.opacity(0.2))
+                            .frame(width: 160, height: 160)
+                            .contextMenu {
+                                Button(action: {}) {
+                                    Label("Add to playlist", systemImage: "plus")
+                                }
+                                Button(action: {}) {
+                                    Label("Create New Playlist", systemImage: "music.note.list")
+                                }
+                            }
+                    }
+                }
+                .padding(.horizontal)
+            }
+        }
     }
 }
