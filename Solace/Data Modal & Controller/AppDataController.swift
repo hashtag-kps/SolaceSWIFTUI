@@ -7,6 +7,7 @@
 
 import Foundation
 import Supabase
+import Combine
 
 
 
@@ -20,7 +21,7 @@ extension Date {
 
 
 
-@MainActor class AppDataController{
+@MainActor class AppDataController: ObservableObject {
     
     
     let supabase = SupabaseClient(
@@ -50,6 +51,8 @@ extension Date {
     
     @Published var soulfulEscapesSongs: [SoulfulEscapeSong] = []
     @Published var peacePointTherapies: [PeacePointTherapy] = []
+    
+    @Published var lastLoggedMoodString: String? = nil
     
     func load() async throws {
         guard let userId = currentUser?.id else {
@@ -233,7 +236,7 @@ extension Date {
     }
     
     // Fetch user logged moods
-    private func fetchUserLoggedMood() async throws -> [UserDailyMoodRecord] {
+    func fetchUserLoggedMood() async throws -> [UserDailyMoodRecord] {
         guard let userId = currentUser?.id else {
             return []
         }

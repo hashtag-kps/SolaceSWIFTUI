@@ -44,7 +44,7 @@ struct MediaPlayerView: View {
                             }) {
                                 HStack {
                                     Image(systemName: isThumbsUp ? "hand.thumbsup.fill" : "hand.thumbsup")
-                                        .foregroundColor(.orange)
+                                        .foregroundColor(isThumbsUp ? .orange : .gray)
                                     Text(thumbsUp)
                                         .font(.caption)
                                         .foregroundColor(.gray)
@@ -109,7 +109,7 @@ struct MediaPlayerView: View {
                     }
                     
                     Button(action: {
-                        audioPlayer.togglePlayback(songName: songName)
+                        audioPlayer.togglePlayback()
                     }) {
                         Image(systemName: audioPlayer.isPlaying ? "pause.circle.fill" : "play.circle.fill")
                             .font(.system(size: 64))
@@ -195,7 +195,7 @@ struct MiniPlayerView: View {
                 HStack(spacing: 24) {
                     // Previous Track Button
                     Button(action: {
-                        // Previous track action
+                        audioPlayer.previous()
                     }) {
                         Image(systemName: "backward.fill")
                             .font(.system(size: 22))
@@ -204,7 +204,7 @@ struct MiniPlayerView: View {
                     
                     // Play/Pause Button
                     Button(action: {
-                        audioPlayer.togglePlayback(songName: songName)
+                        audioPlayer.togglePlayback()
                     }) {
                         Image(systemName: audioPlayer.isPlaying ? "pause.fill" : "play.fill")
                             .font(.system(size: 24))
@@ -213,7 +213,7 @@ struct MiniPlayerView: View {
                     
                     // Next Track Button
                     Button(action: {
-                        // Next track action
+                        audioPlayer.next()
                     }) {
                         Image(systemName: "forward.fill")
                             .font(.system(size: 22))

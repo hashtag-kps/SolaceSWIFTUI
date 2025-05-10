@@ -1,5 +1,6 @@
 import SwiftUI
 import AVFoundation
+import Combine
 
 class AudioPlayerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
     private var audioPlayer: AVAudioPlayer?
@@ -11,17 +12,28 @@ class AudioPlayerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
     private var timer: Timer?
     
     // Playlist and controls
-    var playlist: [String] = ["DeepSleep", "InnsomiaHeal", "DeepThinking"]
+    @Published var playlist: [SoulfulEscapeSong] = []
     @Published var currentIndex: Int = 0
     @Published var isShuffle: Bool = false
     @Published var isRepeat: Bool = false
+    @Published var currentSong: SoulfulEscapeSong? = nil
     
-    func play(songName: String) {
-        if let idx = playlist.firstIndex(of: songName) {
-            currentIndex = idx
+    func setPlaylist(_ songs: [SoulfulEscapeSong]) {
+        playlist = songs
+        if !songs.isEmpty {
+            currentIndex = 0
+            currentSong = songs[0]
         }
-        guard let path = Bundle.main.path(forResource: songName, ofType: "mp3") else {
-            print("Could not find \(songName).mp3")
+    }
+    
+    func play(song: SoulfulEscapeSong) {
+        audioPlayer?.stop() // Stop any current playback
+        if let idx = playlist.firstIndex(where: { $0.id == song.id }) {
+            currentIndex = idx
+            currentSong = song
+        }
+        guard let path = Bundle.main.path(forResource: song.fileUrl, ofType: "mp3") else {
+            print("Could not find \(song.fileUrl).mp3")
             return
         }
         
@@ -45,20 +57,16 @@ class AudioPlayerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
         stopTimer()
     }
     
-    func togglePlayback(songName: String) {
+    func togglePlayback() {
         if isPlaying {
-            audioPlayer?.pause()  // Change stop() to pause()
+            audioPlayer?.pause()
             isPlaying = false
             timer?.invalidate()
             timer = nil
         } else {
-            if audioPlayer != nil {
-                audioPlayer?.play()
-                isPlaying = true
-                startTimer()
-            } else {
-                play(songName: songName)
-            }
+            audioPlayer?.play()
+            isPlaying = true
+            startTimer()
         }
     }
     
@@ -81,13 +89,19 @@ class AudioPlayerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
     }
     
     func playCurrent() {
-        let songName = playlist[currentIndex]
-        play(songName: songName)
+        guard !playlist.isEmpty else { return }
+        let song = playlist[currentIndex]
+        play(song: song)
     }
     
     func next() {
+        guard !playlist.isEmpty else { return }
         if isShuffle {
-            currentIndex = Int.random(in: 0..<playlist.count)
+            var newIndex: Int
+            repeat {
+                newIndex = Int.random(in: 0..<playlist.count)
+            } while playlist.count > 1 && newIndex == currentIndex
+            currentIndex = newIndex
         } else {
             currentIndex = (currentIndex + 1) % playlist.count
         }
@@ -95,6 +109,7 @@ class AudioPlayerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
     }
     
     func previous() {
+        guard !playlist.isEmpty else { return }
         if isShuffle {
             currentIndex = Int.random(in: 0..<playlist.count)
         } else {
@@ -113,6 +128,7 @@ class AudioPlayerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
     
     // AVAudioPlayerDelegate method
     func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
+        print("Song finished, moving to next (repeat: \(isRepeat))")
         if isRepeat {
             playCurrent()
         } else {

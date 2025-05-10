@@ -516,6 +516,7 @@ struct LogMoodView: View {
                             
                             withAnimation {
                                 selectedMood = moods[selectedMoodIndex]
+                                AppDataController.sharedAppDataController.lastLoggedMoodString = selectedMood
                                 isPresented = false
                             }
                         }) {
