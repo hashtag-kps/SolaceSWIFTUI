@@ -1,23 +1,40 @@
-//
-//  ContentView.swift
-//  Solace
-//
-//  Created by Kavyansh Pratap Singh on 23/04/25.
-//
-
 import SwiftUI
 
 struct ContentView: View {
     var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
+        TabView {
+            MoodTrackerAppView()
+                .tabItem {
+                    Image(systemName: "house.fill")
+                    Text("Home")
+                }
+            
+            ExploreView()
+                .tabItem {
+                    Image(systemName: "music.note.list")
+                    Text("Soulful Escapes")
+                }
+            
+            PeacePointView()
+                .tabItem {
+                    Image(systemName: "aqi.medium")
+                    Text("Peace Points")
+                }
         }
-        .padding()
     }
 }
+
+
+
+struct ExploreView: View {
+    var body: some View {
+        VStack {
+            Text("Explore")
+        }
+    }
+}
+
+
 
 #Preview {
     ContentView()
