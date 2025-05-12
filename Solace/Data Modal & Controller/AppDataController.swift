@@ -485,38 +485,7 @@ extension Date {
         }
     
     
-    // Updated mood-related functions
-    func addMoodRecord(
-        date: Date = Date(),
-        moodEmoji: String,
-        moodCategory: MoodCategory
-    ) async throws -> UserDailyMoodRecord {
-        guard let userId = currentUser?.id else {
-            throw NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "No user logged in"])
-        }
-        let newRecord = UserDailyMoodRecord(
-            id: UUID(),
-            userId: userId,
-            date: Calendar.current.startOfDay(for: date),
-            moodEmoji: moodEmoji,
-            moodCategory: moodCategory,
-            isFeedbackSubmitted: nil,
-            feedbackEmoji: nil,
-            createdAt: Date(),
-            feedbackMoodCategory: nil
-        )
-        
-        let insertedRecord: UserDailyMoodRecord = try await supabase
-            .from("UserDailyMoodRecord")
-            .insert(newRecord)
-            .select()
-            .single()
-            .execute()
-            .value
-        
-        self.userLoggedMood.append(insertedRecord)
-        return insertedRecord
-    }
+
     
     // Fetch the last mood feedback for each day
     func fetchLastMoodFeedbackPerDay() async throws -> [UserDailyMoodRecord] {
@@ -579,47 +548,179 @@ extension Date {
 
     
     //Func to log the user mood
+//    func addMoodRecord(
+//            userId: UUID,
+//            date: Date = Date(),
+//            moodEmoji: String,
+//            moodCategory: MoodCategory
+//        ) async throws -> UserDailyMoodRecord {
+//            // Create a new mood record
+//            let newRecord = UserDailyMoodRecord(
+//                id: UUID(), // Will be overridden by gen_random_uuid() in the database
+//                userId: userId,
+//                date: Calendar.current.startOfDay(for: date), // Normalize to start of day
+//                moodEmoji: moodEmoji,
+//                moodCategory: moodCategory,
+//                isFeedbackSubmitted: nil,
+//                feedbackEmoji: nil,
+//                createdAt: Date(), feedbackMoodCategory: nil
+//            )
+//            
+//            // Insert the record into the UserDailyMoodRecord table and fetch the inserted record
+//            let insertedRecord: UserDailyMoodRecord = try await supabase
+//                .from("UserDailyMoodRecord")
+//                .insert(newRecord)
+//                .select() // Fetch the inserted record
+//                .single() // Expect a single record
+//                .execute()
+//                .value
+//            
+//            // Update the userLoggedMood array
+//            self.userLoggedMood.append(insertedRecord)
+//            
+//            // Refresh recommended songs and therapies if the mood is for today
+//            if Calendar.current.isDate(insertedRecord.date, inSameDayAs: Date()) {
+//                async let songs = fetchRecommendedSongs()
+//                async let therapies = fetchRecommendedTherapies()
+//                let (recommendedSongs, recommendedTherapies) = try await (songs, therapies)
+//                self.currentRecommendedSongs = recommendedSongs
+//                self.currentRecommendedTherapy = recommendedTherapies
+//            }
+//            
+//            return insertedRecord
+//        }
+    
+    
     func addMoodRecord(
-            userId: UUID,
-            date: Date = Date(),
-            moodEmoji: String,
-            moodCategory: MoodCategory
-        ) async throws -> UserDailyMoodRecord {
-            // Create a new mood record
-            let newRecord = UserDailyMoodRecord(
-                id: UUID(), // Will be overridden by gen_random_uuid() in the database
-                userId: userId,
-                date: Calendar.current.startOfDay(for: date), // Normalize to start of day
-                moodEmoji: moodEmoji,
-                moodCategory: moodCategory,
-                isFeedbackSubmitted: nil,
-                feedbackEmoji: nil,
-                createdAt: Date(), feedbackMoodCategory: nil
-            )
-            
-            // Insert the record into the UserDailyMoodRecord table and fetch the inserted record
-            let insertedRecord: UserDailyMoodRecord = try await supabase
-                .from("UserDailyMoodRecord")
-                .insert(newRecord)
-                .select() // Fetch the inserted record
-                .single() // Expect a single record
-                .execute()
-                .value
-            
-            // Update the userLoggedMood array
-            self.userLoggedMood.append(insertedRecord)
-            
-            // Refresh recommended songs and therapies if the mood is for today
-            if Calendar.current.isDate(insertedRecord.date, inSameDayAs: Date()) {
-                async let songs = fetchRecommendedSongs()
-                async let therapies = fetchRecommendedTherapies()
-                let (recommendedSongs, recommendedTherapies) = try await (songs, therapies)
-                self.currentRecommendedSongs = recommendedSongs
-                self.currentRecommendedTherapy = recommendedTherapies
-            }
-            
-            return insertedRecord
-        }
+           userId: UUID,
+           date: Date = Date(),
+           moodEmoji: String,
+           moodCategory: MoodCategory
+       ) async throws -> UserDailyMoodRecord {
+           let newRecord = UserDailyMoodRecord(
+               id: UUID(),
+               userId: userId,
+               date: Calendar.current.startOfDay(for: date),
+               moodEmoji: moodEmoji,
+               moodCategory: moodCategory,
+               isFeedbackSubmitted: nil,
+               feedbackEmoji: nil,
+               createdAt: Date(),
+               feedbackMoodCategory: nil
+           )
+           
+           let insertedRecord: UserDailyMoodRecord = try await supabase
+               .from("UserDailyMoodRecord")
+               .insert(newRecord)
+               .select()
+               .single()
+               .execute()
+               .value
+           
+           self.userLoggedMood.append(insertedRecord)
+           
+           // Handle points and streak logic for the first mood entry of the day
+           let today = Calendar.current.startOfDay(for: Date())
+           if Calendar.current.isDate(insertedRecord.date, inSameDayAs: today) {
+               // Check if this is the first mood entry for today
+               let existingMoods: [UserDailyMoodRecord] = try await supabase
+                   .from("UserDailyMoodRecord")
+                   .select()
+                   .eq("user_id", value: userId)
+                   .eq("date", value: today)
+                   .order("created_at", ascending: true)
+                   .execute()
+                   .value
+               
+               if existingMoods.count == 1 { // This is the first mood entry today
+                   // Increment user points by 5
+                   let currentUser: User = try await supabase
+                       .from("User")
+                       .select("user_points")
+                       .eq("user_id", value: userId)
+                       .single()
+                       .execute()
+                       .value
+                   let newPoints = currentUser.userPoints + 5
+                   try await supabase
+                       .from("User")
+                       .update(["user_points": newPoints])
+                       .eq("user_id", value: userId)
+                       .execute()
+                   
+                   // Manage streak
+                   let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: today)!
+                   let previousDayMoods: [UserDailyMoodRecord] = try await supabase
+                       .from("UserDailyMoodRecord")
+                       .select()
+                       .eq("user_id", value: userId)
+                       .eq("date", value: yesterday)
+                       .execute()
+                       .value
+                   
+                   let currentStreak: [Streak] = try await supabase
+                       .from("Streak")
+                       .select()
+                       .eq("user_id", value: userId)
+                       .order("updated_at", ascending: false)
+                       .limit(1)
+                       .execute()
+                       .value
+                   
+                   if let streak = currentStreak.first {
+                       let updatePayload: [String: String]
+                       if !previousDayMoods.isEmpty {
+                           // Continuous streak: increment streak_count
+                           updatePayload = [
+                               "streak_count": String(streak.streakCount + 1),
+                               "longest_streak": String(max(streak.longestStreak, streak.streakCount + 1)),
+                               "updated_at": Date().iso8601
+                           ]
+                       } else {
+                           // Streak broken: update longest_streak if necessary, reset streak_count
+                           updatePayload = [
+                               "streak_count": "0",
+                               "longest_streak": String(max(streak.longestStreak, streak.streakCount)),
+                               "updated_at": Date().iso8601
+                           ]
+                       }
+                       try await supabase
+                           .from("Streak")
+                           .update(updatePayload)
+                           .eq("user_id", value: userId)
+                           .eq("streak_id", value: streak.id)
+                           .execute()
+                       
+                       // Update userStreak array
+                       let updatedStreaks: [Streak] = try await fetchUserStreak()
+                       self.userStreak = updatedStreaks
+                   } else {
+                       // Create new streak record
+                       let newStreak = Streak(
+                           id: UUID(),
+                           userId: userId,
+                           streakCount: 1,
+                           longestStreak: 1,
+                           updatedAt: Date()
+                       )
+                       try await supabase
+                           .from("Streak")
+                           .insert(newStreak)
+                           .execute()
+                       self.userStreak.append(newStreak)
+                   }
+               }
+               
+               // Refresh recommended songs and therapies (existing logic)
+               async let songs = fetchRecommendedSongs()
+               async let therapies = fetchRecommendedTherapies()
+               let (recommendedSongs, recommendedTherapies) = try await (songs, therapies)
+               self.currentRecommendedSongs = recommendedSongs
+               self.currentRecommendedTherapy = recommendedTherapies
+           }
+           
+           return insertedRecord
+       }
     
     
     
