@@ -37,5 +37,5 @@ struct ExploreView: View {
 
 
 #Preview {
-    ContentView()
+    LogIn()
 }

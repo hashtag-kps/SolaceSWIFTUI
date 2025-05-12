@@ -461,21 +461,6 @@ struct LoginView: View {
                         
                         // Social login buttons
                         HStack(spacing: 15) {
-                            // Google button
-//                            Button(action: {
-//                                // Google login
-//                            }) {
-//                                ZStack {
-//                                    Circle()
-//                                        .fill(Color.white)
-//                                        .frame(width: 60, height: 60)
-//                                        .shadow(color: Color.black.opacity(0.1), radius: 5)
-//
-//                                    Text("G")
-//                                        .font(.system(size: 32, weight: .bold))
-//                                        .foregroundColor(Color(hex:"8CCBBD"))
-//                                }
-//                            }
 //
                             // Apple button
                             Button(action: {
