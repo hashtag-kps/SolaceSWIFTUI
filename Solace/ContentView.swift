@@ -1,7 +1,7 @@
 import SwiftUI 
 
 struct ContentView: View { 
-    init() {} // Add explicit initializer
+    //init() {} // Add explicit initializer
     
     var body: some View { 
         TabView { 
