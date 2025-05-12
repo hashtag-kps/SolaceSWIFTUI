@@ -18,7 +18,7 @@ typealias PlatformImage = NSImage
 #endif
 
 struct LogIn: View {
-    @State private var isShowingSignUp = false
+    @State private var isShowingSignUp: Bool = false
     @State private var isShowingForgotPassword = false
     @State private var isShowingVerifyOTP = false
     @State private var isShowingResetPassword = false
@@ -40,7 +40,8 @@ struct LogIn: View {
     var body: some View {
         NavigationStack {
             if isLoggedIn {
-                HomeView(isAuthenticated: $isAuthenticated, isLoggedIn: $isLoggedIn, email: $email)
+               // HomeView(isAuthenticated: $isAuthenticated, isLoggedIn: $isLoggedIn, email: $email)
+                MoodTrackerAppView()
             }
            else if isAuthenticated {
                 VStack {
@@ -154,7 +155,7 @@ struct ForgotPasswordView: View {
                                     // Here you would call Supabase to send OTP
                                     try await SupabaseDataController.shared.sendOTP(email: email)
                                     isShowingVerifyOTP = true
-                                    isShowingForgotPassword = false
+                               isShowingForgotPassword = false
                                 } catch {
                                     authError = error.localizedDescription
                                     showError = true
@@ -281,7 +282,7 @@ struct ResetPasswordView: View {
                                         // Here you would call Supabase to reset password
                                         try await SupabaseDataController.shared.resetPassword(email: email, newPasword: newPassword)
                                         
-                                        // Auto login with new password
+                                      //   Auto login with new password
                                         try await SupabaseDataController.shared.signIn(email: email, password: newPassword)
                                         
                                         isLoggedIn = true
@@ -1114,12 +1115,14 @@ struct VerifyOTPView: View {
                 )
                 
                 print("OTP verification successful for email: \(email)")
-                
                 DispatchQueue.main.async {
-                    isLoading = false
-                    isShowingVerifyOTP = false
-                    isShowingResetPassword = true
-                }
+                                isLoading = false
+                                isShowingVerifyOTP = false
+                                isLoggedIn = true
+                                isAuthenticated = true
+                                UserDefaults.standard.set(true, forKey: "isLoggedIn")
+                                UserDefaults.standard.set(email, forKey: "userEmail")
+                            }
             } catch {
                 DispatchQueue.main.async {
                     isLoading = false
