@@ -1,5 +1,5 @@
 import SwiftUI
-
+//geo
 struct ContentView: View {
     var body: some View {
         TabView {
@@ -9,11 +9,11 @@ struct ContentView: View {
                     Text("Home")
                 }
             
-            ExploreView()
-                .tabItem {
-                    Image(systemName: "music.note.list")
-                    Text("Soulful Escapes")
-                }
+                        ExploreView()
+                            .tabItem {
+                                Image(systemName: "music.note.list")
+                                Text("Soulful Escapes")
+                            }
             
             PeacePointView()
                 .tabItem {
@@ -21,21 +21,6 @@ struct ContentView: View {
                     Text("Peace Points")
                 }
         }
+        
     }
-}
-
-
-
-struct ExploreView: View {
-    var body: some View {
-        VStack {
-            Text("Explore")
-        }
-    }
-}
-
-
-
-#Preview {
-    ContentView()
 }
