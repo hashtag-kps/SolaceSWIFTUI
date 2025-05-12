@@ -11,7 +11,7 @@ import SwiftUI
 struct SolaceApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+           LogIn()
         }
     }
 }
