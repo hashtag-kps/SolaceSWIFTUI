@@ -445,16 +445,59 @@ struct CompletedSession: Codable, Equatable, Identifiable {
 }
 
 
+//struct UserSongInteractionUpdate: Encodable {
+//    let is_liked: Bool
+//    let updated_at: String
+//}
+
 struct UserSongInteractionUpdate: Encodable {
-    let is_liked: Bool
+    let is_liked: Bool?
+    let is_favourited: Bool?
     let updated_at: String
+    
+    enum CodingKeys: String, CodingKey {
+        case is_liked
+        case is_favourited
+        case updated_at
+    }
+    
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(is_liked, forKey: .is_liked)
+        try container.encodeIfPresent(is_favourited, forKey: .is_favourited)
+        try container.encode(updated_at, forKey: .updated_at)
+    }
 }
 
+
+//struct UserSongInteractionInsert: Encodable {
+//    let user_id: UUID
+//    let song_id: UUID
+//    let is_liked: Bool
+//    let created_at: String
+//    let updated_at: String
+//}
 
 struct UserSongInteractionInsert: Encodable {
     let user_id: UUID
     let song_id: UUID
     let is_liked: Bool
+    let is_favourited: Bool
     let created_at: String
     let updated_at: String
+    
+    init(user_id: UUID, song_id: UUID, is_liked: Bool, is_favourited: Bool, created_at: Date, updated_at: Date) throws {
+        guard user_id != UUID() else {
+            throw NSError(domain: "", code: -3, userInfo: [NSLocalizedDescriptionKey: "Invalid user_id"])
+        }
+        guard song_id != UUID() else {
+            throw NSError(domain: "", code: -4, userInfo: [NSLocalizedDescriptionKey: "Invalid song_id"])
+        }
+        self.user_id = user_id
+        self.song_id = song_id
+        self.is_liked = is_liked
+        self.is_favourited = is_favourited
+        self.created_at = created_at.iso8601
+        self.updated_at = updated_at.iso8601
+    }
 }
