@@ -311,80 +311,179 @@ extension Date {
     }
     
     // Fetch all soulful escape songs
-    private func fetchSoulfulEscapesSongs() async throws -> [SoulfulEscapeSong] {
-        let songs: [SoulfulEscapeSong] = try await supabase
-            .from("SoulfulEscapeSong")
-            .select()
-            .order("title", ascending: true)
-            .execute()
-            .value
+    func fetchSoulfulEscapesSongs(isMoodFiltered: Bool = false) async throws -> [SoulfulEscapeSong] {
+        guard let userId = currentUser?.id else {
+            // Return empty array if no user is logged in
+            self.soulfulEscapesSongs = []
+            return []
+        }
+        
+        let songs: [SoulfulEscapeSong]
+        if isMoodFiltered {
+            // Fetch the latest mood record
+            let latestMood: [UserDailyMoodRecord] = try await supabase
+                .from("UserDailyMoodRecord")
+                .select("mood_category")
+                .eq("user_id", value: userId)
+                .order("created_at", ascending: false)
+                .limit(1)
+                .execute()
+                .value
+            
+            if let moodCategory = latestMood.first?.moodCategory {
+                // Fetch songs matching the latest mood category
+                songs = try await supabase
+                    .from("SoulfulEscapeSong")
+                    .select()
+                    .eq("category", value: moodCategory.rawValue)
+                    .order("title", ascending: true)
+                    .execute()
+                    .value
+            } else {
+                // No mood recorded, return empty array
+                songs = []
+            }
+        } else {
+            // Fetch all songs
+            songs = try await supabase
+                .from("SoulfulEscapeSong")
+                .select()
+                .order("title", ascending: true)
+                .execute()
+                .value
+        }
+        
+        // Update the published array
+        self.soulfulEscapesSongs = songs
         return songs
     }
     
+    
     // Fetch all peace point therapies
-    private func fetchPeacePointTherapies() async throws -> [PeacePointTherapy] {
-        let therapies: [PeacePointTherapy] = try await supabase
-            .from("PeacePointTherapy")
-            .select()
-            .order("title", ascending: true)
-            .execute()
-            .value
-        return therapies
-    }
-    
-    // Fetch recommended songs
-    private func fetchRecommendedSongs() async throws -> [SoulfulEscapeSong] {
-        guard let userId = currentUser?.id else {
-            return []
-        }
-        let latestMood: UserDailyMoodRecord? = try await supabase
-            .from("UserDailyMoodRecord")
-            .select()
-            .eq("user_id", value: userId)
-            .order("created_at", ascending: false)
-            .limit(1)
-            .execute()
-            .value
-        
-        if let moodCategory = latestMood?.moodCategory {
-            let songs: [SoulfulEscapeSong] = try await supabase
-                .from("SoulfulEscapeSong")
-                .select()
-                .eq("mood_category", value: moodCategory.rawValue)
-                .limit(10)
-                .execute()
-                .value
-            return songs
-        }
-        return []
-    }
-    
-    // Fetch recommended therapies
-    private func fetchRecommendedTherapies() async throws -> [PeacePointTherapy] {
-        guard let userId = currentUser?.id else {
-            return []
-        }
-        let latestMood: UserDailyMoodRecord? = try await supabase
-            .from("UserDailyMoodRecord")
-            .select()
-            .eq("user_id", value: userId)
-            .order("created_at", ascending: false)
-            .limit(1)
-            .execute()
-            .value
-
-        if let moodCategory = latestMood?.moodCategory {
-            let therapies: [PeacePointTherapy] = try await supabase
-                .from("PeacePointTherapy")
-                .select()
-                .eq("mood_category", value: moodCategory.rawValue)
-                .limit(10)
-                .execute()
-                .value
+    func fetchPeacePointTherapies(isMoodFiltered: Bool = false) async throws -> [PeacePointTherapy] {
+            guard let userId = currentUser?.id else {
+                // Return empty array if no user is logged in
+                self.peacePointTherapies = []
+                return []
+            }
+            
+            let therapies: [PeacePointTherapy]
+            if isMoodFiltered {
+                // Fetch the latest mood record
+                let latestMood: [UserDailyMoodRecord] = try await supabase
+                    .from("UserDailyMoodRecord")
+                    .select("mood_category")
+                    .eq("user_id", value: userId)
+                    .order("created_at", ascending: false)
+                    .limit(1)
+                    .execute()
+                    .value
+                
+                if let moodCategory = latestMood.first?.moodCategory {
+                    // Fetch therapies matching the latest mood category
+                    therapies = try await supabase
+                        .from("PeacePointTherapy")
+                        .select()
+                        .eq("category", value: moodCategory.rawValue)
+                        .order("title", ascending: true)
+                        .execute()
+                        .value
+                } else {
+                    // No mood recorded, return empty array
+                    therapies = []
+                }
+            } else {
+                // Fetch all therapies
+                therapies = try await supabase
+                    .from("PeacePointTherapy")
+                    .select()
+                    .order("title", ascending: true)
+                    .execute()
+                    .value
+            }
+            
+            // Update the published array
+            self.peacePointTherapies = therapies
             return therapies
         }
-        return []
-    }
+    
+
+    
+    // Fetch recommended songs (updated to fetch 2 random songs based on today's last mood)
+       private func fetchRecommendedSongs() async throws -> [SoulfulEscapeSong] {
+           guard let userId = currentUser?.id else {
+               return []
+           }
+           
+           // Get the start of the current day
+           let today = Calendar.current.startOfDay(for: Date())
+           
+           // Fetch the latest mood record for today
+           let latestMood: [UserDailyMoodRecord] = try await supabase
+               .from("UserDailyMoodRecord")
+               .select()
+               .eq("user_id", value: userId)
+               .eq("date", value: today)
+               .order("created_at", ascending: false)
+               .limit(1)
+               .execute()
+               .value
+           
+           if let moodCategory = latestMood.first?.moodCategory {
+               // Fetch 2 random songs matching the mood category
+               let songs: [SoulfulEscapeSong] = try await supabase
+                   .from("SoulfulEscapeSong")
+                   .select()
+                   .eq("category", value: moodCategory.rawValue)
+                   .order("random()", referencedTable: "SoulfulEscapeSong")
+                   .limit(2)
+                   .execute()
+                   .value
+               return songs
+           }
+           
+           return []
+       }
+    
+
+    
+    
+    // Fetch recommended therapies (updated to fetch 2 random therapies based on today's last mood)
+        private func fetchRecommendedTherapies() async throws -> [PeacePointTherapy] {
+            guard let userId = currentUser?.id else {
+                return []
+            }
+            
+            // Get the start of the current day
+            let today = Calendar.current.startOfDay(for: Date())
+            
+            // Fetch the latest mood record for today
+            let latestMood: [UserDailyMoodRecord] = try await supabase
+                .from("UserDailyMoodRecord")
+                .select()
+                .eq("user_id", value: userId)
+                .eq("date", value: today)
+                .order("created_at", ascending: false)
+                .limit(1)
+                .execute()
+                .value
+            
+            if let moodCategory = latestMood.first?.moodCategory {
+                // Fetch 2 random therapies matching the mood category
+                let therapies: [PeacePointTherapy] = try await supabase
+                    .from("PeacePointTherapy")
+                    .select()
+                    .eq("category", value: moodCategory.rawValue)
+                    .order("random()", referencedTable: "PeacePointTherapy")
+                    .limit(2)
+                    .execute()
+                    .value
+                return therapies
+            }
+            
+            return []
+        }
+    
     
     // Updated mood-related functions
     func addMoodRecord(
@@ -467,7 +566,16 @@ extension Date {
     
     
     
-    //MARK: Function Based on Functionality
+    
+    
+    
+    //MARK: Home Tab FUnction
+    
+    
+    
+    
+    
+    
 
     
     //Func to log the user mood
@@ -500,6 +608,15 @@ extension Date {
             
             // Update the userLoggedMood array
             self.userLoggedMood.append(insertedRecord)
+            
+            // Refresh recommended songs and therapies if the mood is for today
+            if Calendar.current.isDate(insertedRecord.date, inSameDayAs: Date()) {
+                async let songs = fetchRecommendedSongs()
+                async let therapies = fetchRecommendedTherapies()
+                let (recommendedSongs, recommendedTherapies) = try await (songs, therapies)
+                self.currentRecommendedSongs = recommendedSongs
+                self.currentRecommendedTherapy = recommendedTherapies
+            }
             
             return insertedRecord
         }
@@ -562,118 +679,58 @@ extension Date {
     }
     
     
+    
+    
+    
+    
+    
+    
+    //MARK: Soulf Escapes Tab Functions
+
+    
+    
+    
+    
+    
+    //Func to like a song
     func likeSong(songId: UUID) async throws -> LikedSong {
-            guard let userId = currentUser?.id else {
-                throw NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "No user logged in"])
-            }
+        guard let userId = currentUser?.id else {
+            throw NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "No user logged in"])
+        }
 
-            // Verify song exists
-            let songExists: [SoulfulEscapeSong] = try await supabase
-                .from("SoulfulEscapeSong")
-                .select("song_id")
-                .eq("song_id", value: songId)
-                .execute()
-                .value
-            guard !songExists.isEmpty else {
-                throw NSError(domain: "", code: -2, userInfo: [NSLocalizedDescriptionKey: "Song not found"])
-            }
+        // Verify song exists
+        let songExists: [SoulfulEscapeSong] = try await supabase
+            .from("SoulfulEscapeSong")
+            .select("song_id")
+            .eq("song_id", value: songId)
+            .execute()
+            .value
+        guard !songExists.isEmpty else {
+            throw NSError(domain: "", code: -2, userInfo: [NSLocalizedDescriptionKey: "Song not found"])
+        }
 
-            // Check for existing interaction
-            let existingInteractions: [UserSongInteraction] = try await supabase
-                .from("UserSongInteraction")
-                .select()
-                .eq("user_id", value: userId)
-                .eq("song_id", value: songId)
-                .execute()
-                .value
+        // Check for existing interaction
+        let existingInteractions: [UserSongInteraction] = try await supabase
+            .from("UserSongInteraction")
+            .select()
+            .eq("user_id", value: userId)
+            .eq("song_id", value: songId)
+            .execute()
+            .value
 
-            let likedSong: LikedSong
-            if let interaction = existingInteractions.first {
-                // Update existing interaction if not already liked
-                if !interaction.isLiked {
-                    let updatePayload = UserSongInteractionUpdate(
-                        is_liked: true,
-                        updated_at: Date().iso8601
-                    )
-                    likedSong = try await supabase
-                        .from("UserSongInteraction")
-                        .update(updatePayload)
-                        .eq("interaction_id", value: interaction.interactionId)
-                        .select("""
-                            interaction_id,
-                            user_id,
-                            song_id,
-                            created_at,
-                            SoulfulEscapeSong!song_id(
-                                song_id,
-                                image_name,
-                                title,
-                                duration,
-                                category AS mood_category,
-                                file_url AS url,
-                                created_at AS song_created_at
-                            )
-                        """)
-                        .single()
-                        .execute()
-                        .value
-
-                    // Update like_count
-                    let currentSong: SoulfulEscapeSong = try await supabase
-                        .from("SoulfulEscapeSong")
-                        .select()
-                        .eq("song_id", value: songId)
-                        .single()
-                        .execute()
-                        .value
-                    try await supabase
-                        .from("SoulfulEscapeSong")
-                        .update(["like_count": currentSong.likeCount + 1])
-                        .eq("song_id", value: songId)
-                        .execute()
-                } else {
-                    // Already liked, fetch current state
-                    likedSong = try await supabase
-                        .from("UserSongInteraction")
-                        .select("""
-                            interaction_id,
-                            user_id,
-                            song_id,
-                            created_at,
-                            SoulfulEscapeSong!song_id(
-                                song_id,
-                                image_name,
-                                title,
-                                duration,
-                                category AS mood_category,
-                                file_url AS url,
-                                created_at AS song_created_at
-                            )
-                        """)
-                        .eq("interaction_id", value: interaction.interactionId)
-                        .single()
-                        .execute()
-                        .value
-                }
-
-                // Update likedSongs array
-                if let index = likedSongs.firstIndex(where: { $0.id == likedSong.id }) {
-                    likedSongs[index] = likedSong
-                } else {
-                    likedSongs.append(likedSong)
-                }
-            } else {
-                // Insert new interaction
-                let insertPayload = UserSongInteractionInsert(
-                    user_id: userId,
-                    song_id: songId,
+        let likedSong: LikedSong
+        if let interaction = existingInteractions.first {
+            // Update existing interaction if not already liked
+            if !interaction.isLiked {
+                let updatePayload = UserSongInteractionUpdate(
                     is_liked: true,
-                    created_at: Date().iso8601,
+                    is_favourited: interaction.isFavourited, // Preserve is_favourited
                     updated_at: Date().iso8601
                 )
                 likedSong = try await supabase
                     .from("UserSongInteraction")
-                    .insert(insertPayload)
+                    .update(updatePayload)
+                    .eq("interaction_id", value: interaction.interactionId)
                     .select("""
                         interaction_id,
                         user_id,
@@ -683,9 +740,11 @@ extension Date {
                             song_id,
                             image_name,
                             title,
+                            subtitle,
                             duration,
-                            category AS mood_category,
-                            file_url AS url,
+                            category,
+                            like_count,
+                            file_url,
                             created_at AS song_created_at
                         )
                     """)
@@ -706,42 +765,72 @@ extension Date {
                     .update(["like_count": currentSong.likeCount + 1])
                     .eq("song_id", value: songId)
                     .execute()
+            } else {
+                // Already liked, fetch current state
+                likedSong = try await supabase
+                    .from("UserSongInteraction")
+                    .select("""
+                        interaction_id,
+                        user_id,
+                        song_id,
+                        created_at,
+                        SoulfulEscapeSong!song_id(
+                            song_id,
+                            image_name,
+                            title,
+                            subtitle,
+                            duration,
+                            category,
+                            like_count,
+                            file_url,
+                            created_at AS song_created_at
+                        )
+                    """)
+                    .eq("interaction_id", value: interaction.interactionId)
+                    .single()
+                    .execute()
+                    .value
+            }
 
+            // Update likedSongs array
+            if let index = likedSongs.firstIndex(where: { $0.id == likedSong.id }) {
+                likedSongs[index] = likedSong
+            } else {
                 likedSongs.append(likedSong)
             }
-
-            likedSongs.sort { $0.interactionCreatedAt > $1.interactionCreatedAt }
-            return likedSong
-        }
-
-        func unlikeSong(songId: UUID) async throws {
-            guard let userId = currentUser?.id else {
-                throw NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "No user logged in"])
-            }
-
-            // Check for existing interaction
-            let interactions: [UserSongInteraction] = try await supabase
+        } else {
+            // Insert new interaction
+            let insertPayload = try UserSongInteractionInsert(
+                user_id: userId,
+                song_id: songId,
+                is_liked: true,
+                is_favourited: false, // Default to false
+                created_at: Date(),
+                updated_at: Date()
+            )
+            likedSong = try await supabase
                 .from("UserSongInteraction")
-                .select()
-                .eq("user_id", value: userId)
-                .eq("song_id", value: songId)
+                .insert(insertPayload)
+                .select("""
+                    interaction_id,
+                    user_id,
+                    song_id,
+                    created_at,
+                    SoulfulEscapeSong!song_id(
+                        song_id,
+                        image_name,
+                        title,
+                        subtitle,
+                        duration,
+                        category,
+                        like_count,
+                        file_url,
+                        created_at AS song_created_at
+                    )
+                """)
+                .single()
                 .execute()
                 .value
-
-            guard let interaction = interactions.first, interaction.isLiked else {
-                return // No interaction or not liked
-            }
-
-            // Update interaction
-            let updatePayload = UserSongInteractionUpdate(
-                is_liked: false,
-                updated_at: Date().iso8601
-            )
-            try await supabase
-                .from("UserSongInteraction")
-                .update(updatePayload)
-                .eq("interaction_id", value: interaction.interactionId)
-                .execute()
 
             // Update like_count
             let currentSong: SoulfulEscapeSong = try await supabase
@@ -753,111 +842,107 @@ extension Date {
                 .value
             try await supabase
                 .from("SoulfulEscapeSong")
-                .update(["like_count": max(0, currentSong.likeCount - 1)])
+                .update(["like_count": currentSong.likeCount + 1])
                 .eq("song_id", value: songId)
                 .execute()
 
-            likedSongs.removeAll { $0.songId == songId }
+            likedSongs.append(likedSong)
         }
 
-        func addFavoriteSong(songId: UUID) async throws -> FavoriteSong {
-            guard let userId = currentUser?.id else {
-                throw NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "No user logged in"])
-            }
+        likedSongs.sort { $0.interactionCreatedAt > $1.interactionCreatedAt }
+        return likedSong
+    }
 
-            // Verify song exists
-            let songExists: [SoulfulEscapeSong] = try await supabase
-                .from("SoulfulEscapeSong")
-                .select("song_id")
-                .eq("song_id", value: songId)
-                .execute()
-                .value
-            guard !songExists.isEmpty else {
-                throw NSError(domain: "", code: -2, userInfo: [NSLocalizedDescriptionKey: "Song not found"])
-            }
+        
+    //Func to unlike the song
+    func unlikeSong(songId: UUID) async throws {
+        guard let userId = currentUser?.id else {
+            throw NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "No user logged in"])
+        }
 
-            // Check for existing interaction
-            let existingInteractions: [UserSongInteraction] = try await supabase
-                .from("UserSongInteraction")
-                .select()
-                .eq("user_id", value: userId)
-                .eq("song_id", value: songId)
-                .execute()
-                .value
+        // Check for existing interaction
+        let interactions: [UserSongInteraction] = try await supabase
+            .from("UserSongInteraction")
+            .select()
+            .eq("user_id", value: userId)
+            .eq("song_id", value: songId)
+            .execute()
+            .value
 
-            let favoriteSong: FavoriteSong
-            if let interaction = existingInteractions.first {
-                // Update existing interaction if not already favorited
-                if !interaction.isFavourited {
-                    let updatePayload = UserSongInteractionUpdate(
-                        is_liked: interaction.isLiked, // Preserve is_liked
-                        updated_at: Date().iso8601
-                    )
-                    favoriteSong = try await supabase
-                        .from("UserSongInteraction")
-                        .update(updatePayload)
-                        .eq("interaction_id", value: interaction.interactionId)
-                        .select("""
-                            interaction_id,
-                            user_id,
-                            song_id,
-                            created_at,
-                            SoulfulEscapeSong!song_id(
-                                song_id,
-                                image_name,
-                                title,
-                                duration,
-                                category AS mood_category,
-                                file_url AS url,
-                                created_at AS song_created_at
-                            )
-                        """)
-                        .single()
-                        .execute()
-                        .value
-                } else {
-                    // Already favorited, fetch current state
-                    favoriteSong = try await supabase
-                        .from("UserSongInteraction")
-                        .select("""
-                            interaction_id,
-                            user_id,
-                            song_id,
-                            created_at,
-                            SoulfulEscapeSong!song_id(
-                                song_id,
-                                image_name,
-                                title,
-                                duration,
-                                category AS mood_category,
-                                file_url AS url,
-                                created_at AS song_created_at
-                            )
-                        """)
-                        .eq("interaction_id", value: interaction.interactionId)
-                        .single()
-                        .execute()
-                        .value
-                }
+        guard let interaction = interactions.first, interaction.isLiked else {
+            return // No interaction or not liked
+        }
 
-                // Update favouriteSongs array
-                if let index = favouriteSongs.firstIndex(where: { $0.id == favoriteSong.id }) {
-                    favouriteSongs[index] = favoriteSong
-                } else {
-                    favouriteSongs.append(favoriteSong)
-                }
-            } else {
-                // Insert new interaction
-                let insertPayload = UserSongInteractionInsert(
-                    user_id: userId,
-                    song_id: songId,
-                    is_liked: false, // Default to false for is_liked
-                    created_at: Date().iso8601,
+        // Update interaction
+        let updatePayload = UserSongInteractionUpdate(
+            is_liked: false,
+            is_favourited: interaction.isFavourited, // Preserve is_favourited
+            updated_at: Date().iso8601
+        )
+        try await supabase
+            .from("UserSongInteraction")
+            .update(updatePayload)
+            .eq("interaction_id", value: interaction.interactionId)
+            .execute()
+
+        // Update like_count
+        let currentSong: SoulfulEscapeSong = try await supabase
+            .from("SoulfulEscapeSong")
+            .select()
+            .eq("song_id", value: songId)
+            .single()
+            .execute()
+            .value
+        try await supabase
+            .from("SoulfulEscapeSong")
+            .update(["like_count": max(0, currentSong.likeCount - 1)])
+            .eq("song_id", value: songId)
+            .execute()
+
+        likedSongs.removeAll { $0.songId == songId }
+    }
+    
+
+    
+    //Func to add song to favourite
+    func addFavoriteSong(songId: UUID) async throws -> FavoriteSong {
+        guard let userId = currentUser?.id else {
+            throw NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "No user logged in"])
+        }
+
+        // Verify song exists
+        let songExists: [SoulfulEscapeSong] = try await supabase
+            .from("SoulfulEscapeSong")
+            .select("song_id")
+            .eq("song_id", value: songId)
+            .execute()
+            .value
+        guard !songExists.isEmpty else {
+            throw NSError(domain: "", code: -2, userInfo: [NSLocalizedDescriptionKey: "Song not found"])
+        }
+
+        // Check for existing interaction
+        let existingInteractions: [UserSongInteraction] = try await supabase
+            .from("UserSongInteraction")
+            .select()
+            .eq("user_id", value: userId)
+            .eq("song_id", value: songId)
+            .execute()
+            .value
+
+        let favoriteSong: FavoriteSong
+        if let interaction = existingInteractions.first {
+            // Update existing interaction if not already favorited
+            if !interaction.isFavourited {
+                let updatePayload = UserSongInteractionUpdate(
+                    is_liked: interaction.isLiked, // Preserve is_liked
+                    is_favourited: true, // Set to true
                     updated_at: Date().iso8601
                 )
                 favoriteSong = try await supabase
                     .from("UserSongInteraction")
-                    .insert(insertPayload)
+                    .update(updatePayload)
+                    .eq("interaction_id", value: interaction.interactionId)
                     .select("""
                         interaction_id,
                         user_id,
@@ -867,54 +952,370 @@ extension Date {
                             song_id,
                             image_name,
                             title,
+                            subtitle,
                             duration,
-                            category AS mood_category,
-                            file_url AS url,
+                            category,
+                            like_count,
+                            file_url,
                             created_at AS song_created_at
                         )
                     """)
                     .single()
                     .execute()
                     .value
+            } else {
+                // Already favorited, fetch current state
+                favoriteSong = try await supabase
+                    .from("UserSongInteraction")
+                    .select("""
+                        interaction_id,
+                        user_id,
+                        song_id,
+                        created_at,
+                        SoulfulEscapeSong!song_id(
+                            song_id,
+                            image_name,
+                            title,
+                            subtitle,
+                            duration,
+                            category,
+                            like_count,
+                            file_url,
+                            created_at AS song_created_at
+                        )
+                    """)
+                    .eq("interaction_id", value: interaction.interactionId)
+                    .single()
+                    .execute()
+                    .value
+            }
 
+            // Update favouriteSongs array
+            if let index = favouriteSongs.firstIndex(where: { $0.id == favoriteSong.id }) {
+                favouriteSongs[index] = favoriteSong
+            } else {
                 favouriteSongs.append(favoriteSong)
             }
-
-            favouriteSongs.sort { $0.interactionCreatedAt > $1.interactionCreatedAt }
-            return favoriteSong
-        }
-
-        func removeFavoriteSong(songId: UUID) async throws {
-            guard let userId = currentUser?.id else {
-                throw NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "No user logged in"])
-            }
-
-            // Check for existing interaction
-            let interactions: [UserSongInteraction] = try await supabase
+        } else {
+            // Insert new interaction
+            let insertPayload = try UserSongInteractionInsert(
+                user_id: userId,
+                song_id: songId,
+                is_liked: false, // Default to false
+                is_favourited: true, // Set to true
+                created_at: Date(),
+                updated_at: Date()
+            )
+            favoriteSong = try await supabase
                 .from("UserSongInteraction")
-                .select()
-                .eq("user_id", value: userId)
-                .eq("song_id", value: songId)
+                .insert(insertPayload)
+                .select("""
+                    interaction_id,
+                    user_id,
+                    song_id,
+                    created_at,
+                    SoulfulEscapeSong! ping_id(
+                        song_id,
+                        image_name,
+                        title,
+                        subtitle,
+                        duration,
+                        category,
+                        like_count,
+                        file_url,
+                        created_at AS song_created_at
+                    )
+                """)
+                .single()
                 .execute()
                 .value
 
-            guard let interaction = interactions.first, interaction.isFavourited else {
-                return // No interaction or not favorited
-            }
-
-            // Update interaction
-            let updatePayload = UserSongInteractionUpdate(
-                is_liked: interaction.isLiked, // Preserve is_liked
-                updated_at: Date().iso8601
-            )
-            try await supabase
-                .from("UserSongInteraction")
-                .update(updatePayload)
-                .eq("interaction_id", value: interaction.interactionId)
-                .execute()
-
-            favouriteSongs.removeAll { $0.songId == songId }
+            favouriteSongs.append(favoriteSong)
         }
+
+        favouriteSongs.sort { $0.interactionCreatedAt > $1.interactionCreatedAt }
+        return favoriteSong
+    }
+
+    //Func to remove it from favourite song
+    func removeFavoriteSong(songId: UUID) async throws {
+        guard let userId = currentUser?.id else {
+            throw NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "No user logged in"])
+        }
+
+        // Check for existing interaction
+        let interactions: [UserSongInteraction] = try await supabase
+            .from("UserSongInteraction")
+            .select()
+            .eq("user_id", value: userId)
+            .eq("song_id", value: songId)
+            .execute()
+            .value
+
+        guard let interaction = interactions.first, interaction.isFavourited else {
+            return // No interaction or not favorited
+        }
+
+        // Update interaction
+        let updatePayload = UserSongInteractionUpdate(
+            is_liked: interaction.isLiked, // Preserve is_liked
+            is_favourited: false, // Set to false
+            updated_at: Date().iso8601
+        )
+        try await supabase
+            .from("UserSongInteraction")
+            .update(updatePayload)
+            .eq("interaction_id", value: interaction.interactionId)
+            .execute()
+
+        favouriteSongs.removeAll { $0.songId == songId }
+    }
+    
+    
+    
+    // Func to create a new playlist
+        func createPlaylist(name: String) async throws -> Playlist {
+            guard let userId = currentUser?.id else {
+                throw NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "No user logged in"])
+            }
+            
+            // Create a new playlist record
+            let newPlaylist = Playlist(
+                id: UUID(),
+                userId: userId,
+                name: name,
+                createdAt: Date()
+            )
+            
+            // Insert the record into the Playlist table and fetch the inserted record
+            let insertedPlaylist: Playlist = try await supabase
+                .from("Playlist")
+                .insert(newPlaylist)
+                .select()
+                .single()
+                .execute()
+                .value
+            
+            // Update the userPlaylists array
+            self.userPlaylists.append(insertedPlaylist)
+            
+            // Sort playlists by created_at for consistency
+            self.userPlaylists.sort { $0.createdAt < $1.createdAt }
+            
+            return insertedPlaylist
+        }
+    
+    
+    
+    // Func to delete a playlist and its associated songs
+        func deletePlaylist(playlistId: UUID) async throws -> Bool {
+            guard let userId = currentUser?.id else {
+                throw NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "No user logged in"])
+            }
+            
+            // Verify playlist exists and belongs to the user
+            let playlistExists: [Playlist] = try await supabase
+                .from("Playlist")
+                .select("playlist_id")
+                .eq("playlist_id", value: playlistId)
+                .eq("user_id", value: userId)
+                .execute()
+                .value
+            guard !playlistExists.isEmpty else {
+                throw NSError(domain: "", code: -2, userInfo: [NSLocalizedDescriptionKey: "Playlist not found or does not belong to user"])
+            }
+            
+            // Delete all associated PlaylistSong records
+            try await supabase
+                .from("PlaylistSong")
+                .delete()
+                .eq("playlist_id", value: playlistId)
+                .execute()
+            
+            // Delete the Playlist record
+            try await supabase
+                .from("Playlist")
+                .delete()
+                .eq("playlist_id", value: playlistId)
+                .execute()
+            
+            // Update the userPlaylists and userPlaylistSongs arrays
+            self.userPlaylists.removeAll { $0.id == playlistId }
+            self.userPlaylistSongs.removeAll { $0.playlistId == playlistId }
+            
+            return true
+        }
+    
+    
+    //Func to get all playlist
+    func getAllPlaylistName()->[Playlist]{
+        return userPlaylists
+    }
+    
+    
+    // Func to fetch all songs in a specific playlist
+        func fetchSongsInPlaylist(playlistId: UUID) async throws -> [SoulfulEscapeSong] {
+            guard let userId = currentUser?.id else {
+                throw NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "No user logged in"])
+            }
+            
+            // Verify playlist exists and belongs to the user
+            let playlistExists: [Playlist] = try await supabase
+                .from("Playlist")
+                .select("playlist_id")
+                .eq("playlist_id", value: playlistId)
+                .eq("user_id", value: userId)
+                .execute()
+                .value
+            guard !playlistExists.isEmpty else {
+                throw NSError(domain: "", code: -2, userInfo: [NSLocalizedDescriptionKey: "Playlist not found or does not belong to user"])
+            }
+            
+            // Fetch songs in the playlist by joining PlaylistSong with SoulfulEscapeSong
+            let songs: [SoulfulEscapeSong] = try await supabase
+                .from("PlaylistSong")
+                .select("""
+                    SoulfulEscapeSong!song_id(
+                        song_id,
+                        image_name,
+                        title,
+                        subtitle,
+                        duration,
+                        category,
+                        like_count,
+                        file_url,
+                        created_at
+                    )
+                """)
+                .eq("playlist_id", value: playlistId)
+                .order("created_at", ascending: true, referencedTable: "SoulfulEscapeSong")
+                .execute()
+                .value
+            
+            return songs
+        }
+    
+    
+    
+    // Func to add a song to a playlist
+        func addSongToPlaylist(playlistId: UUID, songId: UUID) async throws -> PlaylistSong {
+            guard let userId = currentUser?.id else {
+                throw NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "No user logged in"])
+            }
+            
+            // Verify playlist exists and belongs to the user
+            let playlistExists: [Playlist] = try await supabase
+                .from("Playlist")
+                .select("playlist_id")
+                .eq("playlist_id", value: playlistId)
+                .eq("user_id", value: userId)
+                .execute()
+                .value
+            guard !playlistExists.isEmpty else {
+                throw NSError(domain: "", code: -2, userInfo: [NSLocalizedDescriptionKey: "Playlist not found or does not belong to user"])
+            }
+            
+            // Verify song exists
+            let songExists: [SoulfulEscapeSong] = try await supabase
+                .from("SoulfulEscapeSong")
+                .select("song_id")
+                .eq("song_id", value: songId)
+                .execute()
+                .value
+            guard !songExists.isEmpty else {
+                throw NSError(domain: "", code: -3, userInfo: [NSLocalizedDescriptionKey: "Song not found"])
+            }
+            
+            // Check if song is already in the playlist
+            let existingPlaylistSong: [PlaylistSong] = try await supabase
+                .from("PlaylistSong")
+                .select()
+                .eq("playlist_id", value: playlistId)
+                .eq("song_id", value: songId)
+                .execute()
+                .value
+            guard existingPlaylistSong.isEmpty else {
+                throw NSError(domain: "", code: -4, userInfo: [NSLocalizedDescriptionKey: "Song already exists in playlist"])
+            }
+            
+            // Create a new playlist song record
+            let newPlaylistSong = PlaylistSong(
+                id: UUID(),
+                playlistId: playlistId,
+                songId: songId,
+                createdAt: Date()
+            )
+            
+            // Insert the record into the PlaylistSong table and fetch the inserted record
+            let insertedPlaylistSong: PlaylistSong = try await supabase
+                .from("PlaylistSong")
+                .insert(newPlaylistSong)
+                .select()
+                .single()
+                .execute()
+                .value
+            
+            // Update the userPlaylistSongs array
+            self.userPlaylistSongs.append(insertedPlaylistSong)
+            
+            // Sort userPlaylistSongs by createdAt for consistency
+            self.userPlaylistSongs.sort { $0.createdAt < $1.createdAt }
+            
+            return insertedPlaylistSong
+        }
+    
+    
+    
+    // Func to remove a song from a playlist
+    func removeSongFromPlaylist(playlistId: UUID, songId: UUID) async throws -> Bool {
+            guard let userId = currentUser?.id else {
+                throw NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "No user logged in"])
+            }
+            
+            // Verify playlist exists and belongs to the user
+            let playlistExists: [Playlist] = try await supabase
+                .from("Playlist")
+                .select("playlist_id")
+                .eq("playlist_id", value: playlistId)
+                .eq("user_id", value: userId)
+                .execute()
+                .value
+            guard !playlistExists.isEmpty else {
+                throw NSError(domain: "", code: -2, userInfo: [NSLocalizedDescriptionKey: "Playlist not found or does not belong to user"])
+            }
+            
+            // Check if the song exists in the playlist
+            let existingPlaylistSong: [PlaylistSong] = try await supabase
+                .from("PlaylistSong")
+                .select()
+                .eq("playlist_id", value: playlistId)
+                .eq("song_id", value: songId)
+                .execute()
+                .value
+            guard let playlistSong = existingPlaylistSong.first else {
+                throw NSError(domain: "", code: -3, userInfo: [NSLocalizedDescriptionKey: "Song not found in playlist"])
+            }
+            
+            // Delete the record from the PlaylistSong table
+            try await supabase
+                .from("PlaylistSong")
+                .delete()
+                .eq("playlist_song_id", value: playlistSong.id)
+                .execute()
+            
+            // Update the userPlaylistSongs array
+            self.userPlaylistSongs.removeAll { $0.id == playlistSong.id }
+            
+            return true
+        }
+    
+    
+    
+    //MARK: Peace Points Tab Functions
+    
+    
+    
+  
     
 }
 
